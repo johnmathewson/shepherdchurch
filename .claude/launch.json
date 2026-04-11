@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prayer-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev"],
+      "port": 3099,
+      "autoPort": false,
+      "cwd": "/Users/stewardship/Library/CloudStorage/GoogleDrive-john@johnmathewson.co/My Drive/Claude-Sync/virtual-prayer-requests"
+    }
+  ]
+}
