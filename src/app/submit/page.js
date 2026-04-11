@@ -14,6 +14,13 @@ const categories = [
   { value: 'other', label: 'Other', color: 'border-other text-other bg-other/10', description: 'Finances, work, family, guidance' },
 ]
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+  return null
+}
+
 export default function SubmitPage() {
   const router = useRouter()
   const [step, setStep] = useState(0) // 0: checking auth, 1: auth, 2: category, 3: details, 4: confirmation
@@ -27,14 +34,31 @@ export default function SubmitPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
+  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people&state=visitor`
+
   useEffect(() => {
     checkAuth()
   }, [])
 
   async function checkAuth() {
+    // Check Supabase Auth first (client-side)
     const supabase = createBrowserSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
-    setStep(user ? 2 : 1)
+    if (user) {
+      setStep(2)
+      return
+    }
+    // Check for PC visitor session (httpOnly cookie, requires server check)
+    try {
+      const res = await fetch('/api/auth/check')
+      if (res.ok) {
+        setStep(2)
+        return
+      }
+    } catch {
+      // fall through
+    }
+    setStep(1)
   }
 
   async function handleAuth(e) {
@@ -116,13 +140,34 @@ export default function SubmitPage() {
         {step === 1 && (
           <div className="animate-fade-in">
             <h1 className="font-heading text-3xl font-bold mb-2">
-              {isSignup ? 'Create an Account' : 'Welcome Back'}
+              {isSignup ? 'Get Started' : 'Welcome Back'}
             </h1>
             <p className="text-text-secondary mb-8">
               {isSignup
-                ? 'Sign up to submit your prayer request. Your identity stays private from the prayer team.'
+                ? 'Sign in to submit your prayer request. Your identity stays private from the prayer team.'
                 : 'Sign in to continue submitting a prayer request.'}
             </p>
+
+            {/* Church Center OAuth */}
+            <a
+              href={pcAuthUrl}
+              className="flex items-center justify-center gap-3 w-full py-3.5 bg-sage hover:bg-sage-dark text-white font-heading font-semibold rounded-lg transition-all shadow-lg shadow-sage/20 mb-3"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+              </svg>
+              Sign in with Church Center
+            </a>
+            <p className="text-text-muted text-xs text-center mb-6">
+              Shepherd Church members can sign in instantly
+            </p>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-text-muted text-xs uppercase tracking-wider">or use email</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
             <form onSubmit={handleAuth} className="space-y-5">
               {isSignup && (
                 <div>
@@ -163,9 +208,9 @@ export default function SubmitPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-sage hover:bg-sage-dark text-white font-heading font-semibold rounded-lg transition-all disabled:opacity-50"
+                className="w-full py-3.5 border border-border hover:border-sage text-text-primary font-heading font-semibold rounded-lg transition-all disabled:opacity-50"
               >
-                {loading ? (isSignup ? 'Creating account...' : 'Signing in...') : 'Continue'}
+                {loading ? (isSignup ? 'Creating account...' : 'Signing in...') : 'Continue with Email'}
               </button>
             </form>
             <p className="mt-6 text-text-muted text-sm text-center">

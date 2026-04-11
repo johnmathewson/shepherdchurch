@@ -1,23 +1,45 @@
 import { cookies } from 'next/headers'
 import { createServerSupabaseClient, createServiceSupabaseClient } from './supabase'
 
-// Get the authenticated visitor from Supabase Auth
+// Get the authenticated visitor — checks Supabase Auth first, then PC visitor session
 export async function getVisitorSession() {
+  // 1. Check Supabase Auth (email/password users)
   const cookieStore = await cookies()
   const supabase = createServerSupabaseClient(cookieStore)
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return null
 
-  // Look up the visitor profile
-  const serviceClient = createServiceSupabaseClient()
-  const { data: visitor } = await serviceClient
-    .from('visitors')
-    .select('id, display_name, email, email_notifications')
-    .eq('auth_user_id', user.id)
-    .single()
+  if (!error && user) {
+    const serviceClient = createServiceSupabaseClient()
+    const { data: visitor } = await serviceClient
+      .from('visitors')
+      .select('id, display_name, email, email_notifications')
+      .eq('auth_user_id', user.id)
+      .single()
 
-  if (!visitor) return null
-  return { ...visitor, authUserId: user.id }
+    if (visitor) return { ...visitor, authUserId: user.id, authMethod: 'email' }
+  }
+
+  // 2. Check PC visitor session cookie (Planning Center OAuth visitors)
+  const pcToken = cookieStore.get('pc_visitor_session')?.value
+  if (pcToken) {
+    try {
+      const payload = await verifySessionToken(pcToken)
+      if (payload.role === 'visitor') {
+        return {
+          id: payload.id,
+          display_name: payload.display_name,
+          email: payload.email,
+          email_notifications: true,
+          authMethod: 'planning_center',
+          planningCenterId: payload.planning_center_id,
+        }
+      }
+    } catch {
+      // Invalid or expired token — fall through
+    }
+  }
+
+  return null
 }
 
 // Get the team member session from the signed JWT cookie
@@ -27,15 +49,15 @@ export async function getTeamSession() {
   if (!token) return null
 
   try {
-    const payload = await verifyTeamSessionToken(token)
+    const payload = await verifySessionToken(token)
     return payload
   } catch {
     return null
   }
 }
 
-// Create a signed team session token (simple base64-encoded JSON with HMAC)
-export async function createTeamSessionToken(payload) {
+// Create a signed session token (shared by team and PC visitor sessions)
+export async function createSessionToken(payload) {
   const secret = process.env.PLANNING_CENTER_CLIENT_SECRET
   const data = JSON.stringify({
     ...payload,
@@ -55,8 +77,8 @@ export async function createTeamSessionToken(payload) {
   return `${encoded}.${sig}`
 }
 
-// Verify a team session token
-export async function verifyTeamSessionToken(token) {
+// Verify a signed session token
+export async function verifySessionToken(token) {
   const secret = process.env.PLANNING_CENTER_CLIENT_SECRET
   const [encoded, sig] = token.split('.')
   if (!encoded || !sig) throw new Error('Invalid token format')
@@ -78,3 +100,7 @@ export async function verifyTeamSessionToken(token) {
   if (payload.exp < Date.now()) throw new Error('Token expired')
   return payload
 }
+
+// Backward-compatible aliases
+export const createTeamSessionToken = createSessionToken
+export const verifyTeamSessionToken = verifySessionToken

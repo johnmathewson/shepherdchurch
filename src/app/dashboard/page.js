@@ -71,9 +71,11 @@ export default function DashboardPage() {
         <div className="max-w-md mx-auto px-6 py-20 text-center">
           <h1 className="font-heading text-2xl font-bold mb-4">Sign In to View Dashboard</h1>
           <p className="text-text-secondary mb-8">You need to sign in first to view your prayer requests.</p>
-          <Link href="/login" className="px-8 py-3.5 bg-sage hover:bg-sage-dark text-white font-heading font-semibold rounded-lg transition-all inline-block">
-            Sign In
-          </Link>
+          <div className="flex flex-col gap-3 items-center">
+            <Link href="/login" className="px-8 py-3.5 bg-sage hover:bg-sage-dark text-white font-heading font-semibold rounded-lg transition-all inline-block">
+              Sign In
+            </Link>
+          </div>
         </div>
       </div>
     )

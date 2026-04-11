@@ -60,15 +60,17 @@ export async function POST(request) {
     const cookieStore = await cookies()
     const supabase = createServerSupabaseClient(cookieStore)
     await supabase.auth.signOut()
+    cookieStore.delete('pc_visitor_session')
     return Response.json({ success: true })
   }
 
   if (action === 'logout') {
-    // Clear all sessions (visitor + team)
+    // Clear all sessions (visitor + team + PC visitor)
     const cookieStore = await cookies()
     const supabase = createServerSupabaseClient(cookieStore)
     await supabase.auth.signOut()
     cookieStore.delete('team_session')
+    cookieStore.delete('pc_visitor_session')
     return Response.json({ success: true })
   }
 

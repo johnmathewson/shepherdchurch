@@ -10,7 +10,6 @@ const errorMessages = {
   no_code: 'No authorization code received. Please try again.',
   token_exchange: 'Failed to complete sign-in. Please try again.',
   profile_fetch: 'Could not retrieve your profile. Please try again.',
-  not_authorized: 'You must have the Prayer Team tag in Planning Center to access this dashboard. Please contact your church admin.',
   server_error: 'Something went wrong on our end. Please try again.',
   unexpected: 'An unexpected error occurred. Please try again.',
 }
@@ -20,7 +19,7 @@ function TeamLoginContent() {
   const errorCode = searchParams.get('error')
   const errorMessage = errorCode ? errorMessages[errorCode] || 'An error occurred.' : ''
 
-  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people`
+  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people&state=team`
 
   return (
     <div className="animate-fade-in glass rounded-lg p-8">
@@ -47,8 +46,9 @@ function TeamLoginContent() {
       </a>
 
       <p className="mt-8 text-text-muted text-xs text-center max-w-sm mx-auto">
-        You must be tagged as a Prayer Team member in Planning Center to access this dashboard.
-        If you&apos;re having trouble, contact your church admin.
+        Prayer Team members are identified by their tag in Planning Center.
+        If you&apos;re a church member looking to submit a prayer request,{' '}
+        <a href="/login" className="text-sage hover:text-sage-light">sign in here instead</a>.
       </p>
     </div>
   )
