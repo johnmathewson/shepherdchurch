@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prayer Team Dashboard — Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1c1f26;
+    color: #e8e8ed;
+    min-height: 100vh;
+  }
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(15,15,25,0.7);
+    backdrop-filter: blur(20px) saturate(130%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0 24px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo { width: 36px; height: 36px; border-radius: 50%; background: rgba(212,168,67,0.2); display: flex; align-items: center; justify-content: center; }
+  .nav-title { font-weight: 700; font-size: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .nav-link { color: #9ca3af; font-size: 14px; text-decoration: none; }
+  .nav-link:hover { color: #e8e8ed; }
+  .nav-link.danger:hover { color: #ef4444; }
+
+  /* Main */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .header h1 { font-size: 30px; font-weight: 700; }
+  .header .count { color: #9ca3af; font-size: 14px; }
+
+  /* Filter tabs */
+  .tabs { display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    white-space: nowrap; cursor: pointer; border: none; transition: all 0.2s;
+  }
+  .tab.active { background: #d4a843; color: white; }
+  .tab:not(.active) {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.13);
+    color: #9ca3af;
+  }
+  .tab:not(.active):hover { border-color: rgba(212,168,67,0.4); }
+
+  /* Card grid */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px) saturate(130%);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(255,255,255,0.03);
+    transition: all 0.2s;
+  }
+  .card:hover { border-color: rgba(212,168,67,0.4); }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .badge {
+    display: inline-flex; padding: 4px 10px; border-radius: 6px;
+    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-spiritual { background: rgba(212,168,67,0.15); color: #d4a843; }
+  .badge-emotional { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .badge-physical { background: rgba(16,185,129,0.15); color: #34d399; }
+  .badge-other { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .badge-pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .badge-active { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  .card-date { color: #6b7280; font-size: 12px; }
+  .card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .card p { color: #9ca3af; font-size: 14px; line-height: 1.5; margin-bottom: 16px;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .praying-count { display: flex; align-items: center; gap: 6px; color: #6b7280; font-size: 12px; }
+  .card-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-decoration: none; border: none;
+  }
+  .btn-sage { background: #6b8f71; color: white; }
+  .btn-sage:hover { background: #5a7a5f; }
+  .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.13); color: #9ca3af; }
+  .btn-outline:hover { border-color: #d4a843; }
+  .btn-picked { background: rgba(212,168,67,0.15); color: #d4a843; border: 1px solid rgba(212,168,67,0.3); }
+
+  /* Notification bar */
+  .notif-bar {
+    background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.2);
+    border-radius: 8px; padding: 12px 20px; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 14px;
+  }
+  .notif-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #d4a843; margin-right: 10px; display: inline-block; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">
+      <svg width="20" height="20" fill="none" stroke="#d4a843" viewBox="0 0 24 24" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </div>
+    <span class="nav-title">Shepherd Prayer Team</span>
+  </div>
+  <div class="nav-right">
+    <a href="#" class="nav-link">Admin</a>
+    <a href="#" class="nav-link danger">Logout</a>
+  </div>
+</nav>
+
+<main>
+  <div class="notif-bar">
+    <div><span class="dot"></span>2 new prayer requests since your last visit</div>
+  </div>
+
+  <div class="header">
+    <h1>Prayer Requests</h1>
+    <div class="count">8 requests</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active">All Requests</button>
+    <button class="tab">Awaiting Prayer</button>
+    <button class="tab">Being Prayed For</button>
+    <button class="tab">My Pickups</button>
+  </div>
+
+  <div class="grid">
+    <!-- Card 1 — Pending, not picked up -->
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-spiritual">Spiritual</span>
+        <span class="card-date">Apr 16</span>
+      </div>
+      <h3>Seeking Direction for a Big Decision</h3>
+      <p>I'm at a crossroads in life and need wisdom from the Lord. I've been praying but feel stuck between two paths. Please pray for clarity and peace about which direction to go...</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          0 praying
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-sage">Pick Up & Pray</button>
+          <a href="#" class="btn btn-outline">View Details</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 — Active, picked up by me -->
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-physical">Physical</span>
+        <span class="card-date">Apr 15</span>
+      </div>
+      <h3>Healing for My Mother's Cancer</h3>
+      <p>My mother was just diagnosed with stage 2 breast cancer. She's starting treatment next week. Please pray for complete healing, peace for our family, and strength for her through this...</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          3 praying
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-picked">✓ Praying</button>
+          <a href="#" class="btn btn-outline">View & Add Notes</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 — Pending -->
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-emotional">Emotional</span>
+        <span class="card-date">Apr 14</span>
+      </div>
+      <h3>Struggling with Anxiety and Fear</h3>
+      <p>I've been battling anxiety for months. It's affecting my sleep and my relationships. I know God hasn't given me a spirit of fear, but I need breakthrough. Please pray for freedom...</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          1 praying
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-sage">Pick Up & Pray</button>
+          <a href="#" class="btn btn-outline">View Details</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4 — Pending -->
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-other">Other</span>
+        <span class="card-date">Apr 13</span>
+      </div>
+      <h3>Financial Provision for Our Family</h3>
+      <p>My husband lost his job two weeks ago. We have two young kids and bills are piling up. We trust God as our provider but need prayer for open doors and provision during this season...</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          0 praying
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-sage">Pick Up & Pray</button>
+          <a href="#" class="btn btn-outline">View Details</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5 — Active, picked up by me -->
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-spiritual">Spiritual</span>
+        <span class="card-date">Apr 12</span>
+      </div>
+      <h3>Prodigal Son — Please Pray Him Home</h3>
+      <p>My 19-year-old son has walked away from his faith. He's making choices that are breaking my heart. I'm holding onto hope that God will draw him back. Pray for his heart to soften...</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          5 praying
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-picked">✓ Praying</button>
+          <a href="#" class="btn btn-outline">View & Add Notes</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 6 — Pending -->
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-emotional">Emotional</span>
+        <span class="card-date">Apr 11</span>
+      </div>
+      <h3>Marriage Restoration</h3>
+      <p>We are going through the hardest season of our marriage. We've been together 12 years but feel further apart than ever. Please pray for reconciliation, forgiveness, and renewed love...</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          2 praying
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-sage">Pick Up & Pray</button>
+          <a href="#" class="btn btn-outline">View Details</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

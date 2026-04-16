@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg-deep: #111318;
+  --color-bg-deep: #1c1f26;
   --color-bg-surface: rgba(255, 255, 255, 0.04);
   --color-bg-elevated: rgba(255, 255, 255, 0.06);
   --color-bg-glass: rgba(255, 255, 255, 0.05);
@@ -15,12 +15,12 @@
   --color-wheat-light: #d4c49a;
   --color-wheat-dark: #a89a6e;
   --color-gold: #c9a84c;
-  --color-purple: #9b8ec4;
-  --color-purple-light: #b5aad4;
+  --color-purple: #d4a843;
+  --color-purple-light: #e8c060;
   --color-text-primary: #f0f0ec;
   --color-text-secondary: #8893A8;
   --color-text-muted: #555b6e;
-  --color-spiritual: #9b8ec4;
+  --color-spiritual: #d4a843;
   --color-emotional: #e6a857;
   --color-physical: #5b9bd5;
   --color-other: #8893A8;
@@ -81,7 +81,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-nav {
-  background: rgba(17, 19, 24, 0.65);
+  background: rgba(28, 31, 38, 0.65);
   backdrop-filter: blur(24px) saturate(130%);
   -webkit-backdrop-filter: blur(24px) saturate(130%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -112,7 +112,7 @@ h1, h2, h3, h4, h5, h6 {
   inset: 0;
   background:
     radial-gradient(ellipse at 30% 20%, rgba(111, 141, 129, 0.1) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 80%, rgba(155, 142, 196, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(212, 168, 67, 0.06) 0%, transparent 60%),
     linear-gradient(to bottom, rgba(17, 19, 24, 0.3) 0%, rgba(17, 19, 24, 0.5) 50%, rgba(17, 19, 24, 0.9) 80%, rgba(17, 19, 24, 1) 100%);
   z-index: 1;
   pointer-events: none;
@@ -146,7 +146,7 @@ h1, h2, h3, h4, h5, h6 {
   inset: 0;
   background:
     radial-gradient(ellipse at 20% 0%, rgba(111, 141, 129, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(155, 142, 196, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(212, 168, 67, 0.06) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
