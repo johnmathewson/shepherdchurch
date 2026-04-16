@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prayer Team Dashboard — Preview</title>
+<title>Prayer Team Dashboard — Shepherd Church</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Inter', sans-serif;
@@ -13,10 +13,12 @@
     color: #e8e8ed;
     min-height: 100vh;
   }
+  h1, h2, h3 { font-family: 'Montserrat', sans-serif; }
+
   /* Nav */
   nav {
     position: sticky; top: 0; z-index: 50;
-    background: rgba(15,15,25,0.7);
+    background: rgba(28,31,38,0.7);
     backdrop-filter: blur(20px) saturate(130%);
     border-bottom: 1px solid rgba(255,255,255,0.08);
     padding: 0 24px; height: 64px;
@@ -24,9 +26,9 @@
   }
   .nav-left { display: flex; align-items: center; gap: 12px; }
   .nav-logo { width: 36px; height: 36px; border-radius: 50%; background: rgba(212,168,67,0.2); display: flex; align-items: center; justify-content: center; }
-  .nav-title { font-weight: 700; font-size: 18px; }
+  .nav-title { font-weight: 700; font-size: 18px; font-family: 'Montserrat', sans-serif; }
   .nav-right { display: flex; align-items: center; gap: 16px; }
-  .nav-link { color: #9ca3af; font-size: 14px; text-decoration: none; }
+  .nav-link { color: #9ca3af; font-size: 14px; text-decoration: none; cursor: pointer; background: none; border: none; font-family: inherit; }
   .nav-link:hover { color: #e8e8ed; }
   .nav-link.danger:hover { color: #ef4444; }
 
@@ -41,6 +43,7 @@
   .tab {
     padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
     white-space: nowrap; cursor: pointer; border: none; transition: all 0.2s;
+    font-family: inherit;
   }
   .tab.active { background: #d4a843; color: white; }
   .tab:not(.active) {
@@ -76,12 +79,10 @@
   .badge-emotional { background: rgba(59,130,246,0.15); color: #60a5fa; }
   .badge-physical { background: rgba(16,185,129,0.15); color: #34d399; }
   .badge-other { background: rgba(245,158,11,0.15); color: #fbbf24; }
-  .badge-pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
-  .badge-active { background: rgba(16,185,129,0.15); color: #34d399; }
 
   .card-date { color: #6b7280; font-size: 12px; }
   .card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-  .card p { color: #9ca3af; font-size: 14px; line-height: 1.5; margin-bottom: 16px;
+  .card p.desc { color: #9ca3af; font-size: 14px; line-height: 1.5; margin-bottom: 16px;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
   .card-footer {
@@ -89,25 +90,110 @@
     padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
   }
   .praying-count { display: flex; align-items: center; gap: 6px; color: #6b7280; font-size: 12px; }
+  .praying-icon { width: 16px; height: 16px; }
   .card-actions { display: flex; gap: 8px; }
   .btn {
     padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
     cursor: pointer; transition: all 0.2s; text-decoration: none; border: none;
+    font-family: inherit;
   }
-  .btn-sage { background: #6b8f71; color: white; }
-  .btn-sage:hover { background: #5a7a5f; }
+  .btn-sage { background: #6f8d81; color: white; }
+  .btn-sage:hover { background: #5a7a6d; }
   .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.13); color: #9ca3af; }
-  .btn-outline:hover { border-color: #d4a843; }
+  .btn-outline:hover { border-color: #d4a843; color: #e8e8ed; }
   .btn-picked { background: rgba(212,168,67,0.15); color: #d4a843; border: 1px solid rgba(212,168,67,0.3); }
+  .btn-lg { padding: 12px 24px; font-size: 14px; font-weight: 600; }
 
   /* Notification bar */
   .notif-bar {
     background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.2);
     border-radius: 8px; padding: 12px 20px; margin-bottom: 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: 14px;
+    display: flex; align-items: center; font-size: 14px;
   }
   .notif-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #d4a843; margin-right: 10px; display: inline-block; }
+
+  /* Detail page */
+  .detail-view { max-width: 800px; margin: 0 auto; }
+  .detail-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px) saturate(130%);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 8px; padding: 24px; margin-bottom: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .detail-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .detail-meta .ml-auto { margin-left: auto; }
+  .detail-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+  .detail-desc { color: #9ca3af; font-size: 15px; line-height: 1.7; }
+  .detail-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 20px 0; }
+
+  /* Prophetic word form */
+  .prophetic-card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(40px) saturate(150%);
+    border: 1px solid rgba(212,168,67,0.3);
+    border-radius: 8px; padding: 24px; margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .prophetic-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .prophetic-header svg { color: #d4a843; }
+  .prophetic-header h2 { font-size: 18px; font-weight: 600; }
+  .prophetic-hint { color: #9ca3af; font-size: 14px; margin-bottom: 16px; }
+
+  textarea {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #e8e8ed;
+    border-radius: 6px;
+    padding: 12px 16px;
+    width: 100%;
+    font-family: inherit; font-size: 14px;
+    resize: none;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: rgba(212,168,67,0.5);
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 0 0 2px rgba(212,168,67,0.15);
+  }
+  textarea::placeholder { color: #555b6e; }
+
+  .btn-gold { background: #d4a843; color: white; }
+  .btn-gold:hover { background: #e8c060; }
+
+  /* Word cards */
+  .word-card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 8px; padding: 20px; margin-bottom: 12px;
+  }
+  .word-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .word-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(212,168,67,0.2); display: flex; align-items: center; justify-content: center; }
+  .word-date { color: #6b7280; font-size: 12px; }
+  .word-content { color: #e8e8ed; font-size: 15px; line-height: 1.6; font-style: italic; }
+
+  /* Toast notification */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: rgba(111,141,129,0.95); color: white;
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+
+  /* Hide/show views */
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -122,150 +208,246 @@
     <span class="nav-title">Shepherd Prayer Team</span>
   </div>
   <div class="nav-right">
-    <a href="#" class="nav-link">Admin</a>
-    <a href="#" class="nav-link danger">Logout</a>
+    <button id="nav-back" class="nav-link hidden" onclick="showDashboard()">Back to Dashboard</button>
+    <button class="nav-link">Admin</button>
+    <button class="nav-link danger">Logout</button>
   </div>
 </nav>
 
-<main>
+<!-- DASHBOARD VIEW -->
+<main id="dashboard-view">
   <div class="notif-bar">
     <div><span class="dot"></span>2 new prayer requests since your last visit</div>
   </div>
 
   <div class="header">
     <h1>Prayer Requests</h1>
-    <div class="count">8 requests</div>
+    <div class="count" id="request-count">6 requests</div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active">All Requests</button>
-    <button class="tab">Awaiting Prayer</button>
-    <button class="tab">Being Prayed For</button>
-    <button class="tab">My Pickups</button>
+  <div class="tabs" id="filter-tabs">
+    <button class="tab active" data-filter="all">All Requests</button>
+    <button class="tab" data-filter="pending">Awaiting Prayer</button>
+    <button class="tab" data-filter="active">Being Prayed For</button>
+    <button class="tab" data-filter="my_pickups">My Pickups</button>
   </div>
 
-  <div class="grid">
-    <!-- Card 1 — Pending, not picked up -->
-    <div class="card">
-      <div class="card-top">
-        <span class="badge badge-spiritual">Spiritual</span>
-        <span class="card-date">Apr 16</span>
-      </div>
-      <h3>Seeking Direction for a Big Decision</h3>
-      <p>I'm at a crossroads in life and need wisdom from the Lord. I've been praying but feel stuck between two paths. Please pray for clarity and peace about which direction to go...</p>
-      <div class="card-footer">
-        <div class="praying-count">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          0 praying
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-sage">Pick Up & Pray</button>
-          <a href="#" class="btn btn-outline">View Details</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 2 — Active, picked up by me -->
-    <div class="card">
-      <div class="card-top">
-        <span class="badge badge-physical">Physical</span>
-        <span class="card-date">Apr 15</span>
-      </div>
-      <h3>Healing for My Mother's Cancer</h3>
-      <p>My mother was just diagnosed with stage 2 breast cancer. She's starting treatment next week. Please pray for complete healing, peace for our family, and strength for her through this...</p>
-      <div class="card-footer">
-        <div class="praying-count">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          3 praying
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-picked">✓ Praying</button>
-          <a href="#" class="btn btn-outline">View & Add Notes</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3 — Pending -->
-    <div class="card">
-      <div class="card-top">
-        <span class="badge badge-emotional">Emotional</span>
-        <span class="card-date">Apr 14</span>
-      </div>
-      <h3>Struggling with Anxiety and Fear</h3>
-      <p>I've been battling anxiety for months. It's affecting my sleep and my relationships. I know God hasn't given me a spirit of fear, but I need breakthrough. Please pray for freedom...</p>
-      <div class="card-footer">
-        <div class="praying-count">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          1 praying
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-sage">Pick Up & Pray</button>
-          <a href="#" class="btn btn-outline">View Details</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 4 — Pending -->
-    <div class="card">
-      <div class="card-top">
-        <span class="badge badge-other">Other</span>
-        <span class="card-date">Apr 13</span>
-      </div>
-      <h3>Financial Provision for Our Family</h3>
-      <p>My husband lost his job two weeks ago. We have two young kids and bills are piling up. We trust God as our provider but need prayer for open doors and provision during this season...</p>
-      <div class="card-footer">
-        <div class="praying-count">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          0 praying
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-sage">Pick Up & Pray</button>
-          <a href="#" class="btn btn-outline">View Details</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 5 — Active, picked up by me -->
-    <div class="card">
-      <div class="card-top">
-        <span class="badge badge-spiritual">Spiritual</span>
-        <span class="card-date">Apr 12</span>
-      </div>
-      <h3>Prodigal Son — Please Pray Him Home</h3>
-      <p>My 19-year-old son has walked away from his faith. He's making choices that are breaking my heart. I'm holding onto hope that God will draw him back. Pray for his heart to soften...</p>
-      <div class="card-footer">
-        <div class="praying-count">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          5 praying
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-picked">✓ Praying</button>
-          <a href="#" class="btn btn-outline">View & Add Notes</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 6 — Pending -->
-    <div class="card">
-      <div class="card-top">
-        <span class="badge badge-emotional">Emotional</span>
-        <span class="card-date">Apr 11</span>
-      </div>
-      <h3>Marriage Restoration</h3>
-      <p>We are going through the hardest season of our marriage. We've been together 12 years but feel further apart than ever. Please pray for reconciliation, forgiveness, and renewed love...</p>
-      <div class="card-footer">
-        <div class="praying-count">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          2 praying
-        </div>
-        <div class="card-actions">
-          <button class="btn btn-sage">Pick Up & Pray</button>
-          <a href="#" class="btn btn-outline">View Details</a>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="grid" id="request-grid"></div>
 </main>
+
+<!-- DETAIL VIEW -->
+<main id="detail-view" class="hidden">
+  <div class="detail-view animate-in" id="detail-content"></div>
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const PRAYING_SVG = '<svg class="praying-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+const STAR_SVG = '<svg width="20" height="20" fill="none" stroke="#d4a843" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>';
+
+let requests = [
+  {
+    id: '1', category: 'spiritual', title: 'Seeking Direction for a Big Decision',
+    description: "I'm at a crossroads in life and need wisdom from the Lord. I've been praying for months but feel stuck between two paths. One direction feels safe but unfulfilling, and the other feels like a calling but requires a huge leap of faith. Please pray for clarity, peace about which direction to go, and courage to follow where God leads.",
+    date: 'Apr 16', pickup_count: 0, picked_up_by_me: false, status: 'pending', words: []
+  },
+  {
+    id: '2', category: 'physical', title: "Healing for My Mother's Cancer",
+    description: "My mother was just diagnosed with stage 2 breast cancer. She's starting treatment next week and is terrified. She's been the rock of our family for 40 years, and seeing her scared breaks my heart. Please pray for complete healing, peace for our family, strength for her through chemo, and that the doctors would have wisdom in her treatment plan.",
+    date: 'Apr 15', pickup_count: 3, picked_up_by_me: true, status: 'active',
+    words: [
+      { content: "As I was praying, I felt the Lord saying 'I am the God who heals. Tell her to rest in My arms and trust the process. I am doing a new thing — can she not perceive it?' I see a picture of your mother surrounded by light, with strength returning to her body.", date: 'Apr 15, 3:42 PM' },
+    ]
+  },
+  {
+    id: '3', category: 'emotional', title: 'Struggling with Anxiety and Fear',
+    description: "I've been battling anxiety for months. It's affecting my sleep, my work, and my relationships. I wake up in the middle of the night with my heart racing. I know God hasn't given me a spirit of fear, but I feel trapped in this cycle. Please pray for breakthrough, for peace that surpasses understanding, and for freedom from these chains of worry.",
+    date: 'Apr 14', pickup_count: 1, picked_up_by_me: false, status: 'active', words: []
+  },
+  {
+    id: '4', category: 'other', title: 'Financial Provision for Our Family',
+    description: "My husband lost his job two weeks ago after the company downsized. We have two young kids — ages 3 and 6 — and bills are piling up fast. We're trying to trust God as our provider, but the fear is real. Please pray for open doors, for new job opportunities, and for supernatural provision during this incredibly difficult season.",
+    date: 'Apr 13', pickup_count: 0, picked_up_by_me: false, status: 'pending', words: []
+  },
+  {
+    id: '5', category: 'spiritual', title: 'Prodigal Son — Please Pray Him Home',
+    description: "My 19-year-old son has walked away from his faith completely. He was raised in church, loved worship, and even led a small group in high school. Now he's involved in things that are destroying him. It's breaking my heart to watch. I'm holding onto the promise that he who began a good work will carry it to completion. Please pray for his heart to soften and for God to send people into his life who will point him back.",
+    date: 'Apr 12', pickup_count: 5, picked_up_by_me: true, status: 'active',
+    words: [
+      { content: "I sense the Lord reminding you of the parable — the father never stopped watching the road. Your prayers are reaching heaven. I see a vision of a door that looks closed, but light is streaming through the cracks. He is not as far from God as it appears.", date: 'Apr 13, 10:15 AM' },
+      { content: "While praying I felt drawn to Jeremiah 31:16-17 — 'There is hope for your future. Your children will return.' Keep standing in the gap. The seeds you planted are still alive under the surface.", date: 'Apr 14, 7:30 PM' },
+    ]
+  },
+  {
+    id: '6', category: 'emotional', title: 'Marriage Restoration',
+    description: "We are going through the hardest season of our 12-year marriage. Communication has broken down, trust has been damaged, and we feel further apart than ever. We have three kids who are starting to notice the tension. We don't want to give up, but we don't know how to find our way back to each other. Please pray for reconciliation, forgiveness, renewed love, and for God to do what only He can do in our marriage.",
+    date: 'Apr 11', pickup_count: 2, picked_up_by_me: false, status: 'active', words: []
+  },
+];
+
+let currentFilter = 'all';
+
+function badgeClass(category) {
+  return 'badge badge-' + category;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function renderDashboard() {
+  const filtered = requests.filter(r => {
+    if (currentFilter === 'pending') return r.status === 'pending';
+    if (currentFilter === 'active') return r.status === 'active';
+    if (currentFilter === 'my_pickups') return r.picked_up_by_me;
+    return true;
+  });
+
+  document.getElementById('request-count').textContent = filtered.length + ' request' + (filtered.length !== 1 ? 's' : '');
+
+  const grid = document.getElementById('request-grid');
+  grid.innerHTML = filtered.map(req => `
+    <div class="card">
+      <div class="card-top">
+        <span class="${badgeClass(req.category)}">${req.category}</span>
+        <span class="card-date">${req.date}</span>
+      </div>
+      <h3>${req.title}</h3>
+      <p class="desc">${req.description}</p>
+      <div class="card-footer">
+        <div class="praying-count">
+          ${PRAYING_SVG}
+          ${req.pickup_count} praying
+        </div>
+        <div class="card-actions">
+          ${!req.picked_up_by_me
+            ? `<button class="btn btn-sage" onclick="pickupRequest('${req.id}')">Pick Up &amp; Pray</button>`
+            : `<button class="btn btn-picked">&#10003; Praying</button>`
+          }
+          <button class="btn btn-outline" onclick="showDetail('${req.id}')">
+            ${req.picked_up_by_me ? 'View &amp; Add Notes' : 'View Details'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function pickupRequest(id) {
+  const req = requests.find(r => r.id === id);
+  if (!req) return;
+  req.picked_up_by_me = true;
+  req.pickup_count++;
+  req.status = 'active';
+  renderDashboard();
+  showToast('You picked up this prayer request. Praying!');
+}
+
+function showDetail(id) {
+  const req = requests.find(r => r.id === id);
+  if (!req) return;
+
+  document.getElementById('dashboard-view').classList.add('hidden');
+  document.getElementById('detail-view').classList.remove('hidden');
+  document.getElementById('nav-back').classList.remove('hidden');
+
+  const wordsHtml = req.words.length === 0
+    ? '<div class="word-card" style="text-align:center;"><p style="color:#555b6e;font-size:14px;">No prophetic words have been shared yet for this request.</p></div>'
+    : req.words.map(w => `
+      <div class="word-card">
+        <div class="word-meta">
+          <div class="word-avatar">${STAR_SVG.replace('width="20" height="20"', 'width="16" height="16"')}</div>
+          <span class="word-date">${w.date}</span>
+        </div>
+        <p class="word-content">&ldquo;${w.content}&rdquo;</p>
+      </div>
+    `).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-card animate-in">
+      <div class="detail-meta">
+        <span class="${badgeClass(req.category)}">${req.category}</span>
+        <span class="card-date">${req.date}</span>
+        <span class="card-date ml-auto">${req.pickup_count} team member${req.pickup_count !== 1 ? 's' : ''} praying</span>
+      </div>
+      <h1 class="detail-title">${req.title}</h1>
+      <p class="detail-desc">${req.description}</p>
+      ${!req.picked_up_by_me ? `
+        <hr class="detail-divider">
+        <button class="btn btn-sage btn-lg" onclick="pickupFromDetail('${req.id}')">Pick Up This Request &amp; Pray</button>
+      ` : ''}
+    </div>
+
+    ${req.picked_up_by_me ? `
+    <div class="prophetic-card animate-in">
+      <div class="prophetic-header">
+        ${STAR_SVG}
+        <h2>Share a Prophetic Word or Note</h2>
+      </div>
+      <p class="prophetic-hint">As you pray, share what you hear from the Lord. This will be visible to the person who submitted the request.</p>
+      <textarea id="prophetic-input" rows="4" placeholder="I sense the Lord saying..."></textarea>
+      <button class="btn btn-gold btn-lg" onclick="submitWord('${req.id}')">Share Prophetic Word</button>
+    </div>
+    ` : ''}
+
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">
+      Prophetic Words &amp; Notes (${req.words.length})
+    </h2>
+    ${wordsHtml}
+  `;
+}
+
+function pickupFromDetail(id) {
+  const req = requests.find(r => r.id === id);
+  if (!req) return;
+  req.picked_up_by_me = true;
+  req.pickup_count++;
+  req.status = 'active';
+  showDetail(id);
+  showToast('You picked up this prayer request. Praying!');
+}
+
+function submitWord(id) {
+  const input = document.getElementById('prophetic-input');
+  const content = input.value.trim();
+  if (!content) return;
+
+  const req = requests.find(r => r.id === id);
+  if (!req) return;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+    now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  req.words.push({ content, date: dateStr });
+  showDetail(id);
+  showToast('Prophetic word shared with the requester.');
+}
+
+function showDashboard() {
+  document.getElementById('detail-view').classList.add('hidden');
+  document.getElementById('dashboard-view').classList.remove('hidden');
+  document.getElementById('nav-back').classList.add('hidden');
+  renderDashboard();
+}
+
+// Tab filtering
+document.getElementById('filter-tabs').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('tab')) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderDashboard();
+});
+
+// Initial render
+renderDashboard();
+</script>
 
 </body>
 </html>
