@@ -1,5 +1,36 @@
-import { createServiceSupabaseClient } from '@/lib/supabase'
+import { cookies } from 'next/headers'
+import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase'
 import { getVisitorSession, getTeamSession } from '@/lib/auth'
+
+// Inline fallback in case the lib/auth.js getTeamSession() update isn't picked up by the
+// Netlify build cache. Tries the imported getTeamSession first; if it returns null,
+// runs the same Supabase Auth + team_members lookup directly here.
+async function resolveTeamSession() {
+  const session = await getTeamSession()
+  if (session) return session
+  const cookieStore = await cookies()
+  const supabase = createServerSupabaseClient(cookieStore)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const sc = createServiceSupabaseClient()
+  const { data: tm } = await sc
+    .from('team_members')
+    .select('id, display_name, email, role, approved, planning_center_id')
+    .eq('auth_user_id', user.id)
+    .eq('approved', true)
+    .maybeSingle()
+  if (!tm) return null
+  return {
+    id: tm.id,
+    display_name: tm.display_name,
+    email: tm.email,
+    role: tm.role,
+    approved: tm.approved,
+    planning_center_id: tm.planning_center_id,
+    authMethod: 'supabase',
+    authUserId: user.id,
+  }
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -7,7 +38,7 @@ export async function GET(request) {
   const serviceClient = createServiceSupabaseClient()
 
   if (mode === 'team') {
-    const session = await getTeamSession()
+    const session = await resolveTeamSession()
     if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Team sees anonymous requests via the view

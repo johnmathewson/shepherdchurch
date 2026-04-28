@@ -90,6 +90,18 @@ export default function Home() {
                 View My Dashboard
               </Link>
             </div>
+
+            {/* Day/Night announcement */}
+            <Link
+              href="/prayer-week"
+              className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-full glass border border-gold/30 hover:border-gold transition-all group"
+            >
+              <span className="text-gold uppercase tracking-[0.25em] text-[10px] font-bold">Day/Night</span>
+              <span className="text-text-secondary text-sm group-hover:text-text-primary">May 17–23 · A 24/7 Prayer Initiative</span>
+              <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
           </div>
 
           {/* Scroll indicator */}

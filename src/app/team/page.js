@@ -80,6 +80,7 @@ export default function TeamDashboardPage() {
   return (
     <div className="min-h-screen page-bg">
       <Nav variant="team">
+        <Link href="/team/prayer-week" className="text-text-secondary hover:text-text-primary text-sm">Day/Night</Link>
         <Link href="/team/admin" className="text-text-secondary hover:text-text-primary text-sm">Admin</Link>
         <button
           onClick={async () => {

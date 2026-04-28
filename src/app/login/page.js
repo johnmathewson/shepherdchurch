@@ -14,16 +14,20 @@ const errorMessages = {
   profile_fetch: 'Could not retrieve your profile. Please try again.',
   server_error: 'Something went wrong on our end. Please try again.',
   unexpected: 'An unexpected error occurred. Please try again.',
+  no_token: 'Sign-in handoff was incomplete. Please try again.',
+  invalid_token: 'Sign-in handoff could not be verified. Please try again.',
 }
 
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const errorCode = searchParams.get('error')
+  const errorDetail = searchParams.get('detail')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(errorCode ? errorMessages[errorCode] || 'An error occurred.' : '')
+  const friendlyError = errorCode ? errorMessages[errorCode] || 'An error occurred.' : ''
+  const [error, setError] = useState(errorDetail ? `${friendlyError} [${errorCode}] ${errorDetail}` : friendlyError)
 
   const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people&state=visitor`
 
@@ -40,7 +44,8 @@ function LoginContent() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      router.push('/dashboard')
+      const next = searchParams.get('next')
+      router.push(next || '/dashboard')
     } catch (err) {
       setError(err.message)
     } finally {

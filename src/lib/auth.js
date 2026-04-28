@@ -42,17 +42,49 @@ export async function getVisitorSession() {
   return null
 }
 
-// Get the team member session from the signed JWT cookie
+// Get the team member session.
+// Two paths are accepted:
+//   1. Legacy: signed `team_session` JWT cookie (set by /team/login PCO flow).
+//   2. Hub flow: Supabase Auth user + approved row in `team_members`. This is
+//      what fires when a Shepherd member with the Prayer Wall tag clicks the
+//      Prayer Team Dashboard card on the hub — they arrive with a Supabase
+//      session (set by /hub-handoff) but no team_session cookie.
 export async function getTeamSession() {
+  const _GET_TEAM_SESSION_VERSION = 'v3-supabase-fallback-2026-04-27'
   const cookieStore = await cookies()
   const token = cookieStore.get('team_session')?.value
-  if (!token) return null
+  if (token) {
+    try {
+      const payload = await verifySessionToken(token)
+      return payload
+    } catch {
+      // Invalid/expired — fall through to Supabase Auth check.
+    }
+  }
 
-  try {
-    const payload = await verifySessionToken(token)
-    return payload
-  } catch {
-    return null
+  // Fallback: Supabase-authenticated user with an approved team_members row.
+  const supabase = createServerSupabaseClient(cookieStore)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const serviceClient = createServiceSupabaseClient()
+  const { data: tm } = await serviceClient
+    .from('team_members')
+    .select('id, display_name, email, role, approved, planning_center_id')
+    .eq('auth_user_id', user.id)
+    .eq('approved', true)
+    .maybeSingle()
+
+  if (!tm) return null
+  return {
+    id: tm.id,
+    display_name: tm.display_name,
+    email: tm.email,
+    role: tm.role,
+    approved: tm.approved,
+    planning_center_id: tm.planning_center_id,
+    authMethod: 'supabase',
+    authUserId: user.id,
   }
 }
 
