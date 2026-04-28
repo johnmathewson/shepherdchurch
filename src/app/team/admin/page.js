@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import TeamSidebar from '@/components/TeamSidebar'
 
 export default function AdminPage() {
   const [allMembers, setAllMembers] = useState([])
@@ -56,12 +57,10 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen page-bg">
-      <Nav variant="team">
-        <Link href="/team" className="text-text-secondary hover:text-text-primary text-sm">Team Dashboard</Link>
-      </Nav>
+    <div className="min-h-screen page-bg flex">
+      <TeamSidebar />
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="flex-1 px-6 py-8 md:pl-8 md:pt-8 pt-20 max-w-5xl">
         <h1 className="font-heading text-3xl font-bold mb-8">Admin Panel</h1>
 
         {/* Tabs */}

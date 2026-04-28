@@ -6,7 +6,17 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import Badge from '@/components/Badge'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import TeamSidebar from '@/components/TeamSidebar'
 import { useRealtimeSubscription } from '@/lib/realtime'
+
+const FILTER_LABELS = {
+  all: 'All Requests',
+  pending: 'Awaiting Prayer',
+  active: 'Being Prayed For',
+  my_pickups: 'My Pickups',
+  answered: 'Answered',
+  archived: 'Archived',
+}
 
 export default function TeamDashboardPage() {
   const router = useRouter()
@@ -80,50 +90,24 @@ export default function TeamDashboardPage() {
     )
   }
 
+  // Counts for sidebar badges
+  const counts = {
+    all: requests.filter(r => r.status !== 'answered' && r.status !== 'archived').length,
+    pending: requests.filter(r => r.status === 'pending').length,
+    active: requests.filter(r => r.status === 'active').length,
+    my_pickups: requests.filter(r => r.picked_up_by_me).length,
+    answered: requests.filter(r => r.status === 'answered').length,
+    archived: requests.filter(r => r.status === 'archived').length,
+  }
+
   return (
-    <div className="min-h-screen page-bg">
-      <Nav variant="team">
-        <Link href="/team/prayer-week" className="text-text-secondary hover:text-text-primary text-sm">Day/Night</Link>
-        <Link href="/team/admin" className="text-text-secondary hover:text-text-primary text-sm">Admin</Link>
-        <button
-          onClick={async () => {
-            await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) })
-            router.push('/')
-          }}
-          className="text-text-muted hover:text-danger text-sm"
-        >
-          Logout
-        </button>
-      </Nav>
+    <div className="min-h-screen page-bg flex">
+      <TeamSidebar filter={filter} onFilter={setFilter} counts={counts} />
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="flex-1 px-6 py-8 md:pl-8 md:pt-8 pt-20 max-w-5xl">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-heading text-3xl font-bold">Prayer Requests</h1>
+          <h1 className="font-heading text-2xl md:text-3xl font-bold">{FILTER_LABELS[filter] || 'Prayer Requests'}</h1>
           <div className="text-text-muted text-sm">{filtered.length} request{filtered.length !== 1 ? 's' : ''}</div>
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {[
-            { key: 'all', label: 'All Requests' },
-            { key: 'pending', label: 'Awaiting Prayer' },
-            { key: 'active', label: 'Being Prayed For' },
-            { key: 'my_pickups', label: 'My Pickups' },
-            { key: 'answered', label: 'Answered' },
-            { key: 'archived', label: 'Archived' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                filter === tab.key
-                  ? 'bg-purple text-white'
-                  : 'glass text-text-secondary hover:border-purple/40'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
 
         {loading ? (
