@@ -41,16 +41,19 @@ export default function TeamSidebar({ filter, onFilter, counts = {} }) {
 
   return (
     <>
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 w-10 h-10 rounded-lg glass flex items-center justify-center text-text-primary"
-        aria-label="Open menu"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+      {/* Mobile toggle button — solid bg + label so it's obvious */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="md:hidden fixed top-4 left-4 z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-gold text-white shadow-lg shadow-black/40 font-medium text-sm"
+          aria-label="Open menu"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          Menu
+        </button>
+      )}
 
       {/* Backdrop on mobile */}
       {open && (
@@ -71,7 +74,7 @@ export default function TeamSidebar({ filter, onFilter, counts = {} }) {
         ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
       `}>
         {/* Header */}
-        <div className="px-5 py-5 border-b border-border-glass">
+        <div className="px-5 py-5 border-b border-border-glass flex items-center justify-between">
           <Link href="/team" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center">
               <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
@@ -80,6 +83,16 @@ export default function TeamSidebar({ filter, onFilter, counts = {} }) {
             </div>
             <span className="font-heading text-sm font-semibold">Prayer Team</span>
           </Link>
+          {/* Close button — mobile only */}
+          <button
+            onClick={() => setOpen(false)}
+            className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-white/5"
+            aria-label="Close menu"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Filter list — only show on the prayer wall page */}
@@ -99,7 +112,7 @@ export default function TeamSidebar({ filter, onFilter, counts = {} }) {
                 return (
                   <button
                     key={f.key}
-                    onClick={() => onFilter(f.key)}
+                    onClick={() => { onFilter(f.key); setOpen(false) }}
                     className={`
                       w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors
                       ${active
