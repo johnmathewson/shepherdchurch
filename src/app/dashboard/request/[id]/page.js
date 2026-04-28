@@ -188,20 +188,20 @@ export default function RequestDetailPage({ params }) {
                     placeholder="Here's where things stand..."
                     className="resize-none mb-3"
                   />
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="submit"
                       disabled={submittingUpdate || !updateText.trim()}
-                      className="px-5 py-2.5 bg-sage hover:bg-sage-dark text-white font-medium rounded-lg transition-all text-sm disabled:opacity-50"
+                      className="px-4 py-2.5 bg-sage hover:bg-sage-dark text-white font-medium rounded-lg transition-all text-sm disabled:opacity-50 whitespace-nowrap"
                     >
                       {submittingUpdate ? 'Saving...' : 'Post Update'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowAnsweredModal(true)}
-                      className="px-5 py-2.5 bg-gold hover:bg-gold-light text-white font-heading font-semibold rounded-lg transition-all text-sm"
+                      className="px-4 py-2.5 bg-gold hover:bg-gold-light text-white font-heading font-semibold rounded-lg transition-all text-sm whitespace-nowrap"
                     >
-                      Mark as Answered
+                      Mark Answered
                     </button>
                     <button
                       type="button"

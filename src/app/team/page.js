@@ -131,27 +131,27 @@ export default function TeamDashboardPage() {
                 </div>
                 <h3 className="font-heading font-semibold text-lg mb-2">{req.title}</h3>
                 <p className="text-text-secondary text-sm line-clamp-3 mb-4">{req.description}</p>
-                <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                  <div className="flex items-center gap-2 text-text-muted text-xs">
+                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border/50">
+                  <div className="flex items-center gap-1.5 text-text-muted text-xs">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     {req.pickup_count} praying
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 ml-auto">
                     {!req.picked_up_by_me && (
                       <button
                         onClick={() => handlePickup(req.id)}
-                        className="px-3 py-1.5 bg-sage hover:bg-sage-dark text-white text-xs font-medium rounded-lg transition-all"
+                        className="px-3 py-1.5 bg-sage hover:bg-sage-dark text-white text-xs font-medium rounded-lg transition-all whitespace-nowrap"
                       >
-                        Pick Up & Pray
+                        Pick Up
                       </button>
                     )}
                     <Link
                       href={`/team/request/${req.id}`}
-                      className="px-3 py-1.5 border border-border hover:border-purple text-text-secondary text-xs font-medium rounded-lg transition-all"
+                      className="px-3 py-1.5 border border-border hover:border-gold text-text-secondary text-xs font-medium rounded-lg transition-all whitespace-nowrap"
                     >
-                      {req.picked_up_by_me ? 'View & Add Notes' : 'View Details'}
+                      {req.picked_up_by_me ? 'View & Notes' : 'View'}
                     </Link>
                   </div>
                 </div>

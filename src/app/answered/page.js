@@ -77,14 +77,14 @@ export default function AnsweredPrayersPage() {
         Home
       </Link>
 
-      <main className="relative z-10 max-w-5xl mx-auto px-6 py-20">
+      <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-20">
         {/* Hero */}
-        <div className="text-center mb-12 animate-fade-in">
-          <p className="text-gold uppercase tracking-[0.3em] text-xs font-semibold mb-4">The Wall of Answered Prayer</p>
-          <h1 className="font-heading text-5xl sm:text-6xl font-bold mb-5 text-white drop-shadow-lg">
+        <div className="text-center mb-10 sm:mb-12 animate-fade-in">
+          <p className="text-gold uppercase tracking-[0.3em] text-[10px] sm:text-xs font-semibold mb-3 sm:mb-4">The Wall of Answered Prayer</p>
+          <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold mb-4 sm:mb-5 text-white drop-shadow-lg">
             What God Has Done
           </h1>
-          <p className="text-text-secondary text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-text-secondary text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-2">
             Each card is a testimony — a real prayer that was lifted, held in faith, and answered.
           </p>
         </div>
@@ -124,7 +124,7 @@ export default function AnsweredPrayersPage() {
                 <article
                   key={item.id}
                   onClick={() => truncated && setExpandedId(isExpanded ? null : item.id)}
-                  className={`wall-card glass-strong rounded-lg p-6 sm:p-7 animate-fade-in transition-all cursor-pointer ${
+                  className={`wall-card glass-strong rounded-lg p-5 sm:p-7 animate-fade-in transition-all cursor-pointer ${
                     isExpanded ? 'md:col-span-2' : ''
                   } ${truncated ? 'hover:scale-[1.02]' : ''}`}
                   style={{
@@ -133,7 +133,7 @@ export default function AnsweredPrayersPage() {
                   }}
                 >
                   {/* Pin */}
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-gold shadow-[0_0_8px_rgba(212,168,67,0.7)]" />
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gold shadow-[0_0_8px_rgba(212,168,67,0.7)]" />
 
                   <div className="flex items-start justify-between gap-3 mb-3 mt-1">
                     <Badge type="category" value={item.category} />
