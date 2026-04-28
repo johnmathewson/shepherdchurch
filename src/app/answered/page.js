@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Nav from '@/components/Nav'
 import Badge from '@/components/Badge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
@@ -13,7 +12,6 @@ function formatDate(d) {
   return new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(d))
 }
 
-// Truncate testimony to N words for the card. Returns { display, truncated }.
 function truncateWords(text, max) {
   if (!text) return { display: '', truncated: false }
   const words = text.trim().split(/\s+/)
@@ -28,6 +26,14 @@ const categories = [
   { value: 'physical', label: 'Physical' },
   { value: 'other', label: 'Other' },
 ]
+
+// Deterministic small tilt per card so layout is stable across renders
+function tiltFor(id) {
+  let h = 0
+  for (let i = 0; i < (id?.length || 0); i++) h = (h * 31 + id.charCodeAt(i)) | 0
+  // -2.0 to +2.0 degrees
+  return (((h % 41) - 20) / 10).toFixed(2)
+}
 
 export default function AnsweredPrayersPage() {
   const [items, setItems] = useState([])
@@ -52,33 +58,46 @@ export default function AnsweredPrayersPage() {
   useEffect(() => { fetchAnswered() }, [fetchAnswered])
 
   return (
-    <div className="min-h-screen page-bg">
-      <Nav>
-        <Link href="/submit" className="text-sage hover:text-sage-light text-sm font-medium">Submit Request</Link>
-      </Nav>
+    <div className="wall-bg min-h-screen relative">
+      {/* Brick wall background image */}
+      <div className="wall-image" />
+      {/* Atmospheric overlays */}
+      <div className="wall-tint" />
+      <div className="wall-light" />
+      <div className="wall-vignette" />
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      {/* Back button — always visible */}
+      <Link
+        href="/"
+        className="fixed top-5 left-5 z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full glass text-text-secondary hover:text-text-primary text-sm font-medium transition-all hover:border-gold/40"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Home
+      </Link>
+
+      <main className="relative z-10 max-w-5xl mx-auto px-6 py-20">
         {/* Hero */}
-        <div className="text-center mb-10 animate-fade-in">
-          <p className="text-gold uppercase tracking-[0.3em] text-xs font-semibold mb-3">Answered Prayers</p>
-          <h1 className="font-heading text-4xl sm:text-5xl font-bold mb-4">
+        <div className="text-center mb-12 animate-fade-in">
+          <p className="text-gold uppercase tracking-[0.3em] text-xs font-semibold mb-4">The Wall of Answered Prayer</p>
+          <h1 className="font-heading text-5xl sm:text-6xl font-bold mb-5 text-white drop-shadow-lg">
             What God Has Done
           </h1>
-          <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-            Real testimonies from our community. Each story below is a prayer that was lifted up,
-            held in faith, and answered. May they build your faith.
+          <p className="text-text-secondary text-lg max-w-2xl mx-auto leading-relaxed">
+            Each card is a testimony — a real prayer that was lifted, held in faith, and answered.
           </p>
         </div>
 
         {/* Category filter */}
-        <div className="flex justify-center gap-2 mb-10 overflow-x-auto pb-2">
+        <div className="flex justify-center gap-2 mb-12 overflow-x-auto pb-2">
           {categories.map(c => (
             <button
               key={c.value}
               onClick={() => setFilter(c.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 filter === c.value
-                  ? 'bg-gold text-white'
+                  ? 'bg-gold text-white shadow-lg shadow-gold/30'
                   : 'glass text-text-secondary hover:border-gold/40'
               }`}
             >
@@ -90,58 +109,68 @@ export default function AnsweredPrayersPage() {
         {loading ? (
           <LoadingSpinner />
         ) : items.length === 0 ? (
-          <div className="text-center py-20 glass rounded-lg">
+          <div className="text-center py-20 glass rounded-lg max-w-md mx-auto">
             <p className="text-text-muted">
-              No answered prayers shared yet in this category. As God moves, this wall will fill up.
+              No testimonies on this part of the wall yet. As God moves, new cards will appear here.
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {items.map(item => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-7 md:gap-9">
+            {items.map((item, idx) => {
               const { display, truncated } = truncateWords(item.outcome_note, WORD_CAP)
               const isExpanded = expandedId === item.id
+              const tilt = tiltFor(item.id)
               return (
                 <article
                   key={item.id}
-                  className="glass rounded-lg p-6 sm:p-8 border-l-4 border-gold/60 animate-fade-in"
+                  onClick={() => truncated && setExpandedId(isExpanded ? null : item.id)}
+                  className={`wall-card glass-strong rounded-lg p-6 sm:p-7 animate-fade-in transition-all cursor-pointer ${
+                    isExpanded ? 'md:col-span-2' : ''
+                  } ${truncated ? 'hover:scale-[1.02]' : ''}`}
+                  style={{
+                    transform: isExpanded ? 'rotate(0deg)' : `rotate(${tilt}deg)`,
+                    animationDelay: `${idx * 60}ms`,
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <Badge type="category" value={item.category} />
-                      <span className="text-text-muted text-xs">
-                        Answered {formatDate(item.outcome_at)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-text-muted text-xs">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {item.pickup_count} prayed for this
-                    </div>
+                  {/* Pin */}
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-gold shadow-[0_0_8px_rgba(212,168,67,0.7)]" />
+
+                  <div className="flex items-start justify-between gap-3 mb-3 mt-1">
+                    <Badge type="category" value={item.category} />
+                    <span className="text-text-muted text-xs">
+                      Answered {formatDate(item.outcome_at)}
+                    </span>
                   </div>
 
-                  <h2 className="font-heading text-xl font-semibold mb-2">{item.title}</h2>
-                  <p className="text-text-muted text-sm mb-5 italic line-clamp-2">
+                  <h2 className="font-heading text-xl font-semibold mb-2 text-white">{item.title}</h2>
+
+                  <p className="text-text-muted text-xs italic mb-4 line-clamp-2">
                     Original request: {item.description}
                   </p>
 
-                  <div className="bg-gold/5 border border-gold/20 rounded-lg p-5">
-                    <div className="flex items-center gap-2 mb-3 text-gold text-xs uppercase tracking-wider font-semibold">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="bg-gold/8 border-l-2 border-gold/60 pl-4 py-3 pr-3 rounded-r-md">
+                    <div className="flex items-center gap-2 mb-2 text-gold text-[10px] uppercase tracking-[0.2em] font-bold">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                       </svg>
                       Testimony
                     </div>
-                    <p className="text-text-primary leading-relaxed whitespace-pre-wrap">
+                    <p className="text-text-primary leading-relaxed whitespace-pre-wrap text-sm">
                       {isExpanded ? item.outcome_note : display}
                     </p>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/8">
+                    <div className="flex items-center gap-1.5 text-text-muted text-xs">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {item.pickup_count} prayed for this
+                    </div>
                     {truncated && (
-                      <button
-                        onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                        className="mt-3 text-gold hover:text-gold-light text-sm font-medium"
-                      >
-                        {isExpanded ? 'Show less' : 'Read full testimony'}
-                      </button>
+                      <span className="text-gold text-xs font-medium">
+                        {isExpanded ? 'Tap to collapse' : 'Tap to read more'}
+                      </span>
                     )}
                   </div>
                 </article>

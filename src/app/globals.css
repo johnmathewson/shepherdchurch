@@ -221,3 +221,85 @@ input::placeholder, textarea::placeholder {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ============================================================
+   Answered Prayer "Wall" — atmospheric brick-and-light treatment
+   Used only on /answered. Layered backgrounds give depth without
+   making the brick feel like a stock-photo theme.
+   ============================================================ */
+.wall-bg {
+  background: #0a0a0e;
+  position: relative;
+  overflow: hidden;
+}
+
+.wall-image {
+  position: fixed;
+  inset: 0;
+  background-image: url('/wall.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.45) saturate(0.85) contrast(1.05);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Cool tint pulls the wall toward the rest of our palette */
+.wall-tint {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(15, 18, 25, 0.55) 0%,
+    rgba(15, 18, 25, 0.4) 40%,
+    rgba(15, 18, 25, 0.6) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Warm light spilling from above-right (like a lantern or sunbeam) */
+.wall-light {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 75% 0%,
+    rgba(212, 168, 67, 0.18) 0%,
+    rgba(212, 168, 67, 0.05) 30%,
+    transparent 60%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Edge vignette so eye lands on the center */
+.wall-vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 100% 80% at 50% 50%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.5) 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Cards pinned to the wall — heavier shadow, slight tilt, subtle hover lift */
+.wall-card {
+  position: relative;
+  background: rgba(20, 22, 28, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.55),
+    0 6px 14px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  transform-origin: center;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.wall-card:hover {
+  box-shadow:
+    0 28px 60px rgba(0, 0, 0, 0.65),
+    0 10px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
