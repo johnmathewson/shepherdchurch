@@ -89,6 +89,12 @@ export default function Home() {
               >
                 View My Dashboard
               </Link>
+              <Link
+                href="/answered"
+                className="inline-flex items-center justify-center px-8 py-4 glass hover:border-gold text-text-secondary hover:text-gold font-heading font-semibold rounded-lg transition-all"
+              >
+                Answered Prayers
+              </Link>
             </div>
 
             {/* Day/Night announcement */}

@@ -59,7 +59,10 @@ export default function TeamDashboardPage() {
     if (filter === 'pending') return r.status === 'pending'
     if (filter === 'active') return r.status === 'active'
     if (filter === 'my_pickups') return r.picked_up_by_me
-    return true
+    if (filter === 'answered') return r.status === 'answered'
+    if (filter === 'archived') return r.status === 'archived'
+    // Default "all" view: hide answered and archived to keep the wall focused on active prayer
+    return r.status !== 'answered' && r.status !== 'archived'
   })
 
   if (authError) {
@@ -106,6 +109,8 @@ export default function TeamDashboardPage() {
             { key: 'pending', label: 'Awaiting Prayer' },
             { key: 'active', label: 'Being Prayed For' },
             { key: 'my_pickups', label: 'My Pickups' },
+            { key: 'answered', label: 'Answered' },
+            { key: 'archived', label: 'Archived' },
           ].map((tab) => (
             <button
               key={tab.key}

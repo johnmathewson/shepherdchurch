@@ -11,6 +11,7 @@ export default function TeamRequestDetailPage({ params }) {
   const { id } = use(params)
   const [request, setRequest] = useState(null)
   const [words, setWords] = useState([])
+  const [updates, setUpdates] = useState([])
   const [newWord, setNewWord] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -18,16 +19,19 @@ export default function TeamRequestDetailPage({ params }) {
 
   const fetchData = useCallback(async () => {
     try {
-      const [reqRes, wordRes] = await Promise.all([
+      const [reqRes, wordRes, updatesRes] = await Promise.all([
         fetch('/api/requests?mode=team'),
         fetch(`/api/prophetic?request_id=${id}`),
+        fetch(`/api/requests/${id}/updates`),
       ])
       const reqData = await reqRes.json()
       const wordData = await wordRes.json()
+      const updatesData = await updatesRes.json()
 
       const found = (reqData.requests || []).find(r => r.id === id)
       setRequest(found || null)
       setWords(wordData.words || [])
+      setUpdates(updatesData.updates || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -115,7 +119,7 @@ export default function TeamRequestDetailPage({ params }) {
             <h1 className="font-heading text-2xl font-bold mb-3">{request.title}</h1>
             <p className="text-text-secondary leading-relaxed">{request.description}</p>
 
-            {!request.picked_up_by_me && (
+            {!request.picked_up_by_me && request.status !== 'answered' && request.status !== 'archived' && (
               <div className="mt-6 pt-4 border-t border-border">
                 <button
                   onClick={handlePickup}
@@ -127,6 +131,41 @@ export default function TeamRequestDetailPage({ params }) {
               </div>
             )}
           </div>
+
+          {/* Answered testimony banner — visible to team when visitor marked answered */}
+          {request.status === 'answered' && request.outcome_note && (
+            <div className="glass rounded-lg p-6 mb-8 border-l-4 border-gold">
+              <div className="flex items-center gap-2 text-gold text-xs uppercase tracking-wider font-semibold mb-3">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Praise Report from the Visitor
+              </div>
+              <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{request.outcome_note}</p>
+            </div>
+          )}
+
+          {/* Visitor updates timeline */}
+          {updates.length > 0 && (
+            <div className="mb-8">
+              <h2 className="font-heading text-lg font-bold mb-3">Updates from the Visitor</h2>
+              <div className="space-y-3">
+                {updates.map(u => (
+                  <div key={u.id} className={`glass rounded-lg p-4 ${u.is_answer ? 'border-l-2 border-gold' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {u.is_answer && (
+                        <span className="text-gold text-xs uppercase tracking-wider font-semibold">Testimony</span>
+                      )}
+                      <span className="text-text-muted text-xs">
+                        {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">{u.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Add prophetic word */}
           {request.picked_up_by_me && (
