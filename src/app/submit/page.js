@@ -14,77 +14,47 @@ const categories = [
   { value: 'other', label: 'Other', color: 'border-other text-other bg-other/10', description: 'Finances, work, family, guidance' },
 ]
 
-function getCookie(name) {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
-  return null
-}
-
 export default function SubmitPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0) // 0: checking auth, 1: auth, 2: category, 3: details, 4: confirmation
+  // 0: checking auth, 1: category, 2: details, 3: confirmation
+  // Anyone not authenticated is bounced to /login?next=/submit (no in-page auth).
+  const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [isSignup, setIsSignup] = useState(true)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [category, setCategory] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
-  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people&state=visitor`
-
   useEffect(() => {
-    checkAuth()
-  }, [])
+    let cancelled = false
 
-  async function checkAuth() {
-    // Check Supabase Auth first (client-side)
-    const supabase = createBrowserSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      setStep(2)
-      return
-    }
-    // Check for PC visitor session (httpOnly cookie, requires server check)
-    try {
-      const res = await fetch('/api/auth/check')
-      if (res.ok) {
-        setStep(2)
+    async function checkAuth() {
+      // Check Supabase Auth first (covers magic-link visitors)
+      const supabase = createBrowserSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (cancelled) return
+      if (user) {
+        setStep(1)
         return
       }
-    } catch {
-      // fall through
+      // Fall back to PC visitor session (httpOnly cookie — server check)
+      try {
+        const res = await fetch('/api/auth/check')
+        if (cancelled) return
+        if (res.ok) {
+          setStep(1)
+          return
+        }
+      } catch {
+        // fall through
+      }
+      // Not authenticated — send them to /login and bring them back here.
+      if (!cancelled) router.replace('/login?next=/submit')
     }
-    setStep(1)
-  }
 
-  async function handleAuth(e) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    try {
-      const action = isSignup ? 'visitor_signup' : 'visitor_login'
-      const body = isSignup
-        ? { action, email, password, display_name: name }
-        : { action, email, password }
-
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setStep(2)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+    checkAuth()
+    return () => { cancelled = true }
+  }, [router])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -98,16 +68,13 @@ export default function SubmitPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setStep(4)
+      setStep(3)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
   }
-
-  const totalSteps = step <= 1 ? 4 : 3
-  const currentProgress = step <= 1 ? step : step - 1
 
   return (
     <div className="min-h-screen page-bg">
@@ -116,12 +83,12 @@ export default function SubmitPage() {
       </Nav>
 
       <main className="max-w-2xl mx-auto px-6 py-12">
-        {/* Progress bar */}
-        {step > 0 && step < 4 && (
+        {/* Progress bar — visible during the active steps (1 and 2) */}
+        {step > 0 && step < 3 && (
           <div className="flex items-center gap-2 mb-10">
-            {Array.from({ length: totalSteps }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex items-center flex-1">
-                <div className={`h-1.5 rounded-full flex-1 transition-all ${currentProgress >= i + 1 ? 'bg-sage' : 'bg-border'}`} />
+                <div className={`h-1.5 rounded-full flex-1 transition-all ${step >= i + 1 ? 'bg-sage' : 'bg-border'}`} />
               </div>
             ))}
           </div>
@@ -129,113 +96,15 @@ export default function SubmitPage() {
 
         <ErrorAlert message={error} />
 
-        {/* Step 0: Loading */}
+        {/* Step 0: Loading / redirecting to /login */}
         {step === 0 && (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-sage border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* Step 1: Auth */}
+        {/* Step 1: Category */}
         {step === 1 && (
-          <div className="animate-fade-in">
-            <h1 className="font-heading text-3xl font-bold mb-2">
-              {isSignup ? 'Get Started' : 'Welcome Back'}
-            </h1>
-            <p className="text-text-secondary mb-6">
-              {isSignup
-                ? 'Sign in to submit your prayer request.'
-                : 'Sign in to continue submitting a prayer request.'}
-            </p>
-
-            {isSignup && (
-              <div className="mb-8 rounded-lg border border-gold/30 bg-gold/5 p-4 flex gap-3">
-                <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <div className="text-xs text-text-secondary leading-relaxed">
-                  <strong className="text-text-primary block mb-1">Your identity stays private.</strong>
-                  Prayer requests are shown to the prayer team <strong>anonymously</strong> — they see the category, title, and description only. Your name and email are never shared.
-                </div>
-              </div>
-            )}
-
-            {/* Church Center OAuth */}
-            <a
-              href={pcAuthUrl}
-              className="flex items-center justify-center gap-3 w-full py-3.5 bg-sage hover:bg-sage-dark text-white font-heading font-semibold rounded-lg transition-all shadow-lg shadow-sage/20 mb-3"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-              </svg>
-              Sign in with Church Center
-            </a>
-            <p className="text-text-muted text-xs text-center mb-6">
-              Shepherd Church members can sign in instantly
-            </p>
-
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-text-muted text-xs uppercase tracking-wider">or use email</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            <form onSubmit={handleAuth} className="space-y-5">
-              {isSignup && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">Your Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="First name or preferred name"
-                    required
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">Email Address</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-                {isSignup && (
-                  <p className="mt-1.5 text-xs text-text-muted">Used for notifications when someone prays for you</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={isSignup ? 'At least 6 characters' : 'Your password'}
-                  required
-                  minLength={isSignup ? 6 : undefined}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 border border-border hover:border-sage text-text-primary font-heading font-semibold rounded-lg transition-all disabled:opacity-50"
-              >
-                {loading ? (isSignup ? 'Creating account...' : 'Signing in...') : 'Continue with Email'}
-              </button>
-            </form>
-            <p className="mt-6 text-text-muted text-sm text-center">
-              {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <button onClick={() => { setIsSignup(!isSignup); setError('') }} className="text-sage hover:text-sage-light">
-                {isSignup ? 'Sign in' : 'Sign up'}
-              </button>
-            </p>
-          </div>
-        )}
-
-        {/* Step 2: Category */}
-        {step === 2 && (
           <div className="animate-fade-in">
             <h1 className="font-heading text-3xl font-bold mb-2">What area needs prayer?</h1>
             <p className="text-text-secondary mb-8">Select the category that best fits your prayer request.</p>
@@ -243,7 +112,7 @@ export default function SubmitPage() {
               {categories.map((cat) => (
                 <button
                   key={cat.value}
-                  onClick={() => { setCategory(cat.value); setStep(3) }}
+                  onClick={() => { setCategory(cat.value); setStep(2) }}
                   className={`${cat.color} border-2 rounded-lg p-5 text-left hover:scale-[1.02] transition-all backdrop-blur-sm ${
                     category === cat.value ? 'ring-2 ring-sage' : ''
                   }`}
@@ -256,8 +125,8 @@ export default function SubmitPage() {
           </div>
         )}
 
-        {/* Step 3: Details */}
-        {step === 3 && (
+        {/* Step 2: Details */}
+        {step === 2 && (
           <div className="animate-fade-in">
             <h1 className="font-heading text-3xl font-bold mb-2">Share Your Request</h1>
             <p className="text-text-secondary mb-8">
@@ -290,7 +159,7 @@ export default function SubmitPage() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(1)}
                   className="px-6 py-3.5 border border-border text-text-secondary hover:border-sage font-heading font-semibold rounded-lg transition-all"
                 >
                   Back
@@ -307,8 +176,8 @@ export default function SubmitPage() {
           </div>
         )}
 
-        {/* Step 4: Confirmation */}
-        {step === 4 && (
+        {/* Step 3: Confirmation */}
+        {step === 3 && (
           <div className="animate-fade-in text-center py-12">
             <div className="w-20 h-20 rounded-full bg-sage/20 flex items-center justify-center mx-auto mb-6 animate-pulse-glow">
               <svg className="w-10 h-10 text-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -328,7 +197,7 @@ export default function SubmitPage() {
                 View My Dashboard
               </Link>
               <button
-                onClick={() => { setStep(2); setTitle(''); setDescription(''); setCategory(''); setError('') }}
+                onClick={() => { setStep(1); setTitle(''); setDescription(''); setCategory(''); setError('') }}
                 className="px-8 py-3.5 border border-border hover:border-sage text-text-secondary hover:text-text-primary font-heading font-semibold rounded-lg transition-all"
               >
                 Submit Another Request
