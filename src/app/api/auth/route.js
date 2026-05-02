@@ -56,6 +56,40 @@ export async function POST(request) {
     })
   }
 
+  if (action === 'visitor_magic_link') {
+    const { email, next } = body
+    if (!email) return Response.json({ error: 'Email is required.' }, { status: 400 })
+
+    const cookieStore = await cookies()
+    const supabase = createServerSupabaseClient(cookieStore)
+
+    // Use the configured app URL when present (production / preview deploys),
+    // otherwise fall back to the request origin (local dev).
+    const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
+    // Only accept same-origin paths. Reject protocol-relative URLs ("//evil.com")
+    // which start with "/" but resolve off-origin → open redirect risk.
+    const isSafePath = typeof next === 'string'
+      && next.startsWith('/')
+      && !next.startsWith('//')
+      && !next.startsWith('/\\')
+    const safeNext = isSafePath ? next : '/dashboard'
+    const emailRedirectTo = `${origin}/api/auth/callback/magic-link?next=${encodeURIComponent(safeNext)}`
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // First-time visitors are auto-created on their first verify; the
+        // callback fills in the visitors row so they land on /dashboard ready.
+        shouldCreateUser: true,
+        emailRedirectTo,
+      },
+    })
+
+    if (error) return Response.json({ error: error.message }, { status: 400 })
+
+    return Response.json({ success: true })
+  }
+
   if (action === 'visitor_logout') {
     const cookieStore = await cookies()
     const supabase = createServerSupabaseClient(cookieStore)
