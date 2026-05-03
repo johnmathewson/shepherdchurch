@@ -10,8 +10,20 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const errorParam = searchParams.get('error')
 
-  // Determine where to redirect on error based on origin
-  const origin = searchParams.get('state') || 'visitor'
+  // state format: "visitor" | "visitor:/some/path" | "team"
+  // The colon-separated suffix is the post-login destination for visitor flows.
+  const rawState = searchParams.get('state') || 'visitor'
+  const colonIdx = rawState.indexOf(':')
+  const origin = colonIdx === -1 ? rawState : rawState.slice(0, colonIdx)
+  const encodedNext = colonIdx === -1 ? '' : rawState.slice(colonIdx + 1)
+  const visitorSuccessRedirect = (() => {
+    if (!encodedNext) return '/dashboard'
+    const decoded = decodeURIComponent(encodedNext)
+    // Only allow same-origin paths; reject protocol-relative tricks
+    return decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.startsWith('/\\')
+      ? decoded
+      : '/dashboard'
+  })()
   const errorRedirect = origin === 'team' ? '/team/login' : '/login'
 
   if (errorParam) {
@@ -145,7 +157,7 @@ export async function GET(request) {
         sameSite: 'lax',
       })
 
-      return Response.redirect(new URL('/dashboard', request.url))
+      return Response.redirect(new URL(visitorSuccessRedirect, request.url))
     }
   } catch (err) {
     console.error('Planning Center OAuth error:', err)

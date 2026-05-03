@@ -33,10 +33,11 @@ function LoginContent() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(initialError)
 
-  // state=visitor so OAuth errors bounce back to /login (where the user started)
-  // rather than /team/login. The PC callback decides team-vs-visitor routing on
-  // success by inspecting the prayer team tag — not by reading `state`.
-  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people+services&state=visitor`
+  // state encodes origin (for error routing) and optionally the post-login destination.
+  // Format: "visitor" or "visitor:/some/path" — the callback parses the colon to get `next`.
+  // Team login always uses state=team (no next needed — always lands on /team).
+  const stateParam = `visitor${next && next !== '/dashboard' ? ':' + encodeURIComponent(next) : ''}`
+  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people+services&state=${stateParam}`
 
   async function handleSendLink(e) {
     e.preventDefault()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -46,7 +46,10 @@ export default function PrayerWeekPage() {
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [signupNotes, setSignupNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [holdingSlotId, setHoldingSlotId] = useState(null)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState('')
+  const toastTimerRef = useRef(null)
   const [showInstructions, setShowInstructions] = useState(true)
 
   const fetchEverything = useCallback(async () => {
@@ -75,6 +78,12 @@ export default function PrayerWeekPage() {
 
   useEffect(() => { fetchEverything() }, [fetchEverything])
 
+  function showToast(msg) {
+    setToast(msg)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(''), 5000)
+  }
+
   // After login, check for a pending hold to claim
   useEffect(() => {
     if (!authed) return
@@ -92,13 +101,13 @@ export default function PrayerWeekPage() {
     setError('')
 
     if (slot.mine) {
-      // Allow viewing/releasing through the my-slots page
       router.push('/prayer-week/my-slots')
       return
     }
 
     if (!authed) {
-      // Place a hold and redirect to login
+      // Place a hold then redirect to login
+      setHoldingSlotId(slot.id)
       try {
         const res = await fetch('/api/prayer-week/hold', {
           method: 'POST',
@@ -107,8 +116,9 @@ export default function PrayerWeekPage() {
         })
         const data = await res.json()
         if (!res.ok) {
-          setError(data.error || 'Could not hold this slot')
+          showToast(data.error || 'Could not hold this slot. Please try another.')
           fetchEverything()
+          setHoldingSlotId(null)
           return
         }
         sessionStorage.setItem('day_night_hold_token', data.hold_token)
@@ -116,7 +126,8 @@ export default function PrayerWeekPage() {
         sessionStorage.setItem('day_night_redirect', '/prayer-week')
         router.push('/login?next=/prayer-week')
       } catch (err) {
-        setError('Network error placing hold')
+        showToast('Network error — please try again.')
+        setHoldingSlotId(null)
       }
       return
     }
@@ -203,8 +214,6 @@ export default function PrayerWeekPage() {
           </div>
         </div>
 
-        <ErrorAlert message={error} />
-
         {/* Instructions */}
         {event.instructions && (
           <div className="glass rounded-lg p-6 mb-8">
@@ -253,16 +262,18 @@ export default function PrayerWeekPage() {
                     <button
                       key={slot.id}
                       onClick={() => handleSlotClick(slot)}
-                      disabled={isFilled && !isMine}
+                      disabled={(isFilled && !isMine) || holdingSlotId === slot.id}
                       className={`h-8 rounded text-[10px] font-medium transition-all ${
                         isMine
                           ? 'bg-gold/30 border border-gold text-gold hover:bg-gold/40'
                           : isFilled
                           ? 'bg-sage/20 border border-sage/30 text-sage cursor-not-allowed'
+                          : holdingSlotId === slot.id
+                          ? 'bg-gold/20 border border-gold/50 text-gold animate-pulse cursor-wait'
                           : 'bg-white/5 border border-white/10 text-text-muted hover:bg-gold/15 hover:border-gold/40 hover:text-gold cursor-pointer'
                       }`}
                     >
-                      {isMine ? 'Mine' : isFilled ? 'Filled' : 'Open'}
+                      {holdingSlotId === slot.id ? '...' : isMine ? 'Mine' : isFilled ? 'Filled' : 'Open'}
                     </button>
                   )
                 })}
@@ -293,16 +304,18 @@ export default function PrayerWeekPage() {
                     <button
                       key={slot.id}
                       onClick={() => handleSlotClick(slot)}
-                      disabled={isFilled && !isMine}
+                      disabled={(isFilled && !isMine) || holdingSlotId === slot.id}
                       className={`py-2 rounded text-xs font-medium transition-all ${
                         isMine
                           ? 'bg-gold/30 border border-gold text-gold'
                           : isFilled
                           ? 'bg-sage/20 border border-sage/30 text-sage cursor-not-allowed'
+                          : holdingSlotId === slot.id
+                          ? 'bg-gold/20 border border-gold/50 text-gold animate-pulse'
                           : 'bg-white/5 border border-white/10 text-text-muted'
                       }`}
                     >
-                      {formatHour(hour)}
+                      {holdingSlotId === slot.id ? '…' : formatHour(hour)}
                     </button>
                   )
                 })}
@@ -321,6 +334,19 @@ export default function PrayerWeekPage() {
           </div>
         )}
       </main>
+
+      {/* Fixed toast — visible regardless of scroll position */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="flex items-center gap-3 px-5 py-3 rounded-lg bg-danger text-white shadow-xl text-sm font-medium max-w-sm">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{toast}</span>
+            <button onClick={() => setToast('')} className="ml-1 text-white/70 hover:text-white leading-none">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Sign-up modal */}
       {selectedSlot && (
