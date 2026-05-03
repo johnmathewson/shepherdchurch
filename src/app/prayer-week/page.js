@@ -383,7 +383,7 @@ export default function PrayerWeekPage() {
             <p className="text-text-secondary text-sm mb-1">
               {formatFullTime(new Date(authPrompt.slot.starts_at))}
             </p>
-            <p className="text-gold text-xs mb-6">Your spot is held for 5 minutes.</p>
+            <p className="text-gold text-xs mb-6">Your spot is held for 30 seconds — sign in quickly!</p>
 
             {authEmailSent ? (
               <div className="rounded-lg border border-sage/30 bg-sage/5 p-4 mb-5">
