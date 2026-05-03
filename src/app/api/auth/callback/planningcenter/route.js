@@ -72,23 +72,14 @@ export async function GET(request) {
     const prayerTagId = process.env.PLANNING_CENTER_PRAYER_TAG_ID
     let hasTeamTag = false
 
-    // Check Services API for Prayer Wall position assignment
+    // Check Services API for Prayer Wall position assignment (ID: 38505912)
     const PC_SERVICES_URL = 'https://api.planningcenteronline.com/services/v2'
     const positionsRes = await fetch(
       `${PC_SERVICES_URL}/people/${pcId}/person_team_position_assignments?include=team_position&per_page=100`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
-    const positionsText = await positionsRes.text()
-    if (!prayerTagId) {
-      const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 20px">
-<h2>Debug: PC Services for ${displayName} (pcId: ${pcId})</h2>
-<p>Status: ${positionsRes.status}</p>
-<pre style="font-size:12px;background:#f5f5f5;padding:16px;overflow:auto;white-space:pre-wrap">${positionsText.replace(/</g,'&lt;')}</pre>
-</body></html>`
-      return new Response(html, { headers: { 'Content-Type': 'text/html' } })
-    }
     if (positionsRes.ok) {
-      const positionsData = JSON.parse(positionsText)
+      const positionsData = await positionsRes.json()
       hasTeamTag = (positionsData.included || [])
         .some(i => i.type === 'TeamPosition' && i.id === prayerTagId)
     }
