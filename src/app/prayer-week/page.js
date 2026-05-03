@@ -229,6 +229,7 @@ export default function PrayerWeekPage() {
   const myCount = slots.filter(s => s.mine).length
 
   return (
+    <>
     <div className="min-h-screen page-bg">
       <Nav>
         {authed && (
@@ -370,8 +371,11 @@ export default function PrayerWeekPage() {
           </div>
         )}
       </main>
+    </div>
 
-      {/* Sign-in prompt modal — shown when unauthenticated user clicks a slot */}
+    {/* ── Overlays — outside page-bg so .page-bg>* doesn't force position:relative ── */}
+
+    {/* Sign-in prompt modal — shown when unauthenticated user clicks a slot */}
       {authPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-fade-in" style={{background: 'rgba(0,0,0,0.75)'}}>
           <div className="glass-strong rounded-lg p-6 w-full max-w-md">
@@ -510,6 +514,6 @@ export default function PrayerWeekPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
