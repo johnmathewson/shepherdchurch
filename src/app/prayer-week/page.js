@@ -52,6 +52,14 @@ export default function PrayerWeekPage() {
   const toastTimerRef = useRef(null)
   const [showInstructions, setShowInstructions] = useState(true)
 
+  // Unauthenticated sign-in prompt (shown as modal when slot is clicked)
+  const [authPrompt, setAuthPrompt] = useState(null) // { slot, holdToken }
+  const [authEmail, setAuthEmail] = useState('')
+  const [authEmailLoading, setAuthEmailLoading] = useState(false)
+  const [authEmailSent, setAuthEmailSent] = useState(false)
+
+  const pcOAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people+services&state=visitor:${encodeURIComponent('/prayer-week')}`
+
   const fetchEverything = useCallback(async () => {
     try {
       const eventRes = await fetch('/api/prayer-week/event')
@@ -106,7 +114,7 @@ export default function PrayerWeekPage() {
     }
 
     if (!authed) {
-      // Place a hold then redirect to login
+      // Hold the slot, then show inline sign-in modal (no redirect)
       setHoldingSlotId(slot.id)
       try {
         const res = await fetch('/api/prayer-week/hold', {
@@ -116,7 +124,7 @@ export default function PrayerWeekPage() {
         })
         const data = await res.json()
         if (!res.ok) {
-          showToast(data.error || 'Could not hold this slot. Please try another.')
+          showToast(data.error || 'This slot was just taken — please pick another.')
           fetchEverything()
           setHoldingSlotId(null)
           return
@@ -124,7 +132,10 @@ export default function PrayerWeekPage() {
         sessionStorage.setItem('day_night_hold_token', data.hold_token)
         sessionStorage.setItem('day_night_hold_slot_id', slot.id)
         sessionStorage.setItem('day_night_redirect', '/prayer-week')
-        router.push('/login?next=/prayer-week')
+        setHoldingSlotId(null)
+        setAuthEmail('')
+        setAuthEmailSent(false)
+        setAuthPrompt({ slot, holdToken: data.hold_token })
       } catch (err) {
         showToast('Network error — please try again.')
         setHoldingSlotId(null)
@@ -165,6 +176,31 @@ export default function PrayerWeekPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleAuthEmailSubmit(e) {
+    e.preventDefault()
+    setAuthEmailLoading(true)
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'visitor_magic_link', email: authEmail, next: '/prayer-week' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Could not send sign-in link.')
+      setAuthEmailSent(true)
+    } catch (err) {
+      showToast(err.message)
+    } finally {
+      setAuthEmailLoading(false)
+    }
+  }
+
+  function closeAuthPrompt() {
+    setAuthPrompt(null)
+    setAuthEmail('')
+    setAuthEmailSent(false)
   }
 
   if (loading) {
@@ -334,6 +370,90 @@ export default function PrayerWeekPage() {
           </div>
         )}
       </main>
+
+      {/* Sign-in prompt modal — shown when unauthenticated user clicks a slot */}
+      {authPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-fade-in" style={{background: 'rgba(0,0,0,0.75)'}}>
+          <div className="glass-strong rounded-lg p-6 w-full max-w-md">
+            <h3 className="font-heading text-xl font-bold mb-1">Sign in to claim this hour</h3>
+            <p className="text-text-secondary text-sm mb-1">
+              {formatFullTime(new Date(authPrompt.slot.starts_at))}
+            </p>
+            <p className="text-gold text-xs mb-6">Your spot is held for 5 minutes.</p>
+
+            {authEmailSent ? (
+              <div className="rounded-lg border border-sage/30 bg-sage/5 p-4 mb-5">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-sage flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <div className="text-sm text-text-secondary leading-relaxed">
+                    <strong className="text-text-primary block mb-1">Check your email.</strong>
+                    We sent a sign-in link to <strong className="text-text-primary">{authEmail}</strong>. Click it to finish claiming your hour.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Email / magic link */}
+                <form onSubmit={handleAuthEmailSubmit} className="space-y-3 mb-5">
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1.5">Email Address</label>
+                    <input
+                      type="email"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={authEmailLoading || !authEmail}
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-gold hover:bg-gold-light text-white font-heading font-semibold rounded-lg transition-all shadow-lg shadow-gold/20 disabled:opacity-50"
+                  >
+                    {authEmailLoading ? 'Sending…' : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Send me a sign-in link
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-text-muted text-xs uppercase tracking-wider">or</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Planning Center */}
+                <a
+                  href={pcOAuthUrl}
+                  className="flex items-center justify-center gap-2 w-full py-3 border border-border hover:border-purple text-text-secondary hover:text-purple font-medium rounded-lg transition-all text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Sign in with Planning Center
+                </a>
+              </>
+            )}
+
+            <button
+              onClick={closeAuthPrompt}
+              className="mt-4 w-full py-2.5 text-sm text-text-muted hover:text-text-secondary transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Fixed toast — visible regardless of scroll position */}
       {toast && (
