@@ -223,93 +223,162 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ============================================================
-   Answered Prayer "Wall" — atmospheric brick-and-light treatment
-   Used only on /answered. Layered backgrounds give depth without
-   making the brick feel like a stock-photo theme.
+   Answered Prayer "Wall" — wood-framed bulletin board with
+   sticky-note testimonies. Used only on /answered. Goal is a
+   physical "board on the church lobby wall" feel: dark backboard,
+   wood frame, hand-written pastel post-its pinned chaotically.
    ============================================================ */
-.wall-bg {
-  background: #0a0a0e;
+
+/* Outer page — warm dim room. A faint overhead light kisses the
+   board so the eye lands there immediately. */
+.board-room {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -8%,
+      rgba(232, 200, 140, 0.10) 0%,
+      transparent 60%),
+    linear-gradient(180deg, #1a1410 0%, #0d0a08 100%);
+  min-height: 100vh;
   position: relative;
-  overflow: hidden;
 }
 
-.wall-image {
-  position: fixed;
-  inset: 0;
-  background-image: url('/wall.jpg');
-  background-size: cover;
-  background-position: center;
-  filter: brightness(0.45) saturate(0.85) contrast(1.05);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Cool tint pulls the wall toward the rest of our palette */
-.wall-tint {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(180deg,
-    rgba(15, 18, 25, 0.55) 0%,
-    rgba(15, 18, 25, 0.4) 40%,
-    rgba(15, 18, 25, 0.6) 100%);
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Warm light spilling from above-right (like a lantern or sunbeam) */
-.wall-light {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse 60% 50% at 75% 0%,
-    rgba(212, 168, 67, 0.18) 0%,
-    rgba(212, 168, 67, 0.05) 30%,
-    transparent 60%);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* Edge vignette so eye lands on the center */
-.wall-vignette {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse 100% 80% at 50% 50%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.5) 100%);
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* Cards pinned to the wall — heavier shadow, slight tilt, subtle hover lift */
-.wall-card {
-  position: relative;
-  background: rgba(20, 22, 28, 0.78);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+/* Wood frame around the board — repeating dark walnut grain */
+.board-frame {
+  background:
+    repeating-linear-gradient(92deg,
+      rgba(25, 14, 6, 0.55) 0px,
+      rgba(60, 35, 18, 0.20) 2px,
+      rgba(25, 14, 6, 0.45) 4px,
+      rgba(80, 48, 24, 0.18) 7px),
+    linear-gradient(135deg, #5c3a1f 0%, #3d2614 50%, #4a2e18 100%);
+  padding: clamp(14px, 2vw, 22px);
+  border-radius: 10px;
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.55),
-    0 6px 14px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-  transform-origin: center;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    0 36px 90px rgba(0, 0, 0, 0.75),
+    0 14px 32px rgba(0, 0, 0, 0.55),
+    inset 0 2px 0 rgba(255, 220, 180, 0.15),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+/* Inner board surface — dark felt with a soft inner shadow so the
+   notes feel pinned onto a surface, not floating in space */
+.board-surface {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 35%,
+      rgba(60, 50, 38, 0.22) 0%,
+      transparent 70%),
+    linear-gradient(180deg, #1a1814 0%, #14110d 100%);
+  border-radius: 4px;
+  padding: clamp(20px, 3vw, 36px);
+  min-height: 60vh;
+  box-shadow:
+    inset 0 4px 14px rgba(0, 0, 0, 0.65),
+    inset 0 -2px 6px rgba(60, 40, 25, 0.25);
+}
+
+/* ───────── Sticky note ───────── */
+.sticky-note {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: 2px;
+  padding: 22px 14px 16px;
+  font-family: var(--font-handwriting), 'Caveat', 'Patrick Hand', 'Bradley Hand', 'Marker Felt', cursive;
+  color: #2a2a2a;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  transform-origin: 50% 0;
+  transform: rotate(var(--note-tilt, 0deg));
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s ease,
+              z-index 0s 0.35s;
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 -8px 18px rgba(0, 0, 0, 0.07);
   will-change: transform;
 }
 
-.wall-card:hover {
+.sticky-note:hover,
+.sticky-note:focus-visible {
+  transform: rotate(var(--note-tilt, 0deg)) scale(1.07) translateY(-3px);
   box-shadow:
-    0 28px 60px rgba(0, 0, 0, 0.65),
-    0 10px 20px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 16px 34px rgba(0, 0, 0, 0.6),
+    0 5px 12px rgba(0, 0, 0, 0.45);
+  z-index: 5;
+  transition-delay: 0s;
+  outline: none;
 }
 
-/* On mobile, single-column tilted cards look broken; flatten them */
-@media (max-width: 767px) {
-  .wall-card {
-    transform: none !important;
+/* Tape strip across the top of each note */
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 42%;
+  height: 14px;
+  background: rgba(220, 215, 195, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transform: translateX(-50%) rotate(-2deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Note color variants — pastel cycling, soft top-to-bottom shading
+   so each note reads as physical paper rather than a flat fill */
+.note-yellow   { background: linear-gradient(165deg, #FFF4A6 0%, #F0DD66 100%); }
+.note-pink     { background: linear-gradient(165deg, #FFD3DC 0%, #F8A5B4 100%); }
+.note-blue     { background: linear-gradient(165deg, #C7E5F2 0%, #98C2DC 100%); }
+.note-mint     { background: linear-gradient(165deg, #D2F4DA 0%, #9CD6AB 100%); }
+.note-orange   { background: linear-gradient(165deg, #FFD7A8 0%, #F4AC68 100%); }
+.note-peach    { background: linear-gradient(165deg, #FBCBA4 0%, #ED9968 100%); }
+.note-lavender { background: linear-gradient(165deg, #E8DCF6 0%, #BFA4E0 100%); }
+
+/* Modal note — same paper feel, much larger, no tilt */
+.note-modal {
+  position: relative;
+  font-family: var(--font-handwriting), 'Caveat', 'Patrick Hand', 'Bradley Hand', 'Marker Felt', cursive;
+  color: #2a2a2a;
+  border-radius: 3px;
+  padding: 36px 38px 32px;
+  width: min(560px, 92vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.7),
+    0 14px 30px rgba(0, 0, 0, 0.55),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.06);
+  animation: note-pop 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.note-modal::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 28%;
+  height: 18px;
+  background: rgba(220, 215, 195, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transform: translateX(-50%) rotate(-1.5deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+@keyframes note-pop {
+  0%   { opacity: 0; transform: scale(0.85) rotate(-2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* On narrow screens, dial down tilt so notes don't clip */
+@media (max-width: 640px) {
+  .sticky-note {
+    transform: rotate(calc(var(--note-tilt, 0deg) * 0.5));
   }
-  .wall-bg {
-    overflow-x: hidden;
+  .sticky-note:hover,
+  .sticky-note:focus-visible {
+    transform: rotate(calc(var(--note-tilt, 0deg) * 0.5)) scale(1.05);
   }
 }
