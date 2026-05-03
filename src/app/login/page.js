@@ -36,7 +36,7 @@ function LoginContent() {
   // state=visitor so OAuth errors bounce back to /login (where the user started)
   // rather than /team/login. The PC callback decides team-vs-visitor routing on
   // success by inspecting the prayer team tag — not by reading `state`.
-  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people&state=visitor`
+  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people+services&state=visitor`
 
   async function handleSendLink(e) {
     e.preventDefault()

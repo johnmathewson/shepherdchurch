@@ -19,7 +19,7 @@ function TeamLoginContent() {
   const errorCode = searchParams.get('error')
   const errorMessage = errorCode ? errorMessages[errorCode] || 'An error occurred.' : ''
 
-  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people&state=team`
+  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people+services&state=team`
 
   return (
     <div className="animate-fade-in glass rounded-lg p-8">
