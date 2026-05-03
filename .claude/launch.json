@@ -4,10 +4,10 @@
     {
       "name": "prayer-dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["next", "dev"],
+      "runtimeArgs": ["next", "dev", "--webpack", "--port", "3099"],
       "port": 3099,
       "autoPort": false,
-      "cwd": "/Users/stewardship/Library/CloudStorage/GoogleDrive-john@johnmathewson.co/My Drive/Claude-Sync/virtual-prayer-requests"
+      "cwd": "/Users/johnmathewson/Library/CloudStorage/GoogleDrive-john@johnmathewson.co/My Drive/Claude-Sync/virtual-prayer-requests"
     }
   ]
 }

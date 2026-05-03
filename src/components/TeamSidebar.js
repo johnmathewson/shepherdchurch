@@ -15,9 +15,14 @@ import { usePathname } from 'next/navigation'
  * On desktop the sidebar is always visible. On mobile a hamburger button
  * toggles a slide-in sheet.
  */
-export default function TeamSidebar({ filter, onFilter, counts = {} }) {
+export default function TeamSidebar({ filter, onFilter, counts = {}, open: controlledOpen, onOpenChange }) {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  // Controlled mode: parent owns open state and provides its own trigger.
+  // Uncontrolled mode (default): sidebar manages itself with its built-in pill button.
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? (v) => onOpenChange?.(v) : setInternalOpen
 
   // Close mobile sheet on route change
   useEffect(() => { setOpen(false) }, [pathname])
@@ -41,8 +46,10 @@ export default function TeamSidebar({ filter, onFilter, counts = {} }) {
 
   return (
     <>
-      {/* Mobile toggle button — solid bg + label so it's obvious */}
-      {!open && (
+      {/* Mobile toggle button — only rendered in uncontrolled mode.
+          When parent controls the sidebar (e.g. has its own topbar trigger),
+          we skip rendering this so we don't double up. */}
+      {!isControlled && !open && (
         <button
           onClick={() => setOpen(true)}
           className="md:hidden fixed top-4 left-4 z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-gold text-white shadow-lg shadow-black/40 font-medium text-sm"
@@ -55,24 +62,35 @@ export default function TeamSidebar({ filter, onFilter, counts = {} }) {
         </button>
       )}
 
-      {/* Backdrop on mobile */}
+      {/* Mobile-only soft backdrop. pointer-events: none so taps on the cards
+          underneath still register; tapping the X in the sidebar header (or
+          navigating away) closes it. */}
       {open && (
         <div
-          onClick={() => setOpen(false)}
+          aria-hidden="true"
           className="md:hidden fixed inset-0 z-40"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          style={{ background: 'rgba(0,0,0,0.35)', pointerEvents: 'none' }}
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed md:sticky top-0 left-0 z-50
-        h-screen w-64 shrink-0
-        glass-nav border-r border-border
-        flex flex-col
-        transition-transform duration-300
-        ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
-      `}>
+      {/* Sidebar — inline styles for the critical positioning so this can't
+          be defeated by a stale Tailwind build cache. We've been bitten by
+          that before (the auth.js cache miss), and `position: fixed` is
+          load-bearing for the overlay behavior to work at all. */}
+      <aside
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '16rem',
+          height: '100vh',
+          zIndex: 50,
+          display: 'flex',
+          flexDirection: 'column',
+          transform: open ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 300ms ease',
+        }}
+        className="glass-nav border-r border-border md:!translate-x-0">
         {/* Header */}
         <div className="px-5 py-5 border-b border-border-glass flex items-center justify-between">
           <Link href="/team" className="flex items-center gap-2.5">
