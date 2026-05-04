@@ -308,7 +308,12 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 0;
 }
 
-.page-bg > * {
+/* Stack normal page children above the .page-bg::before gradient overlay.
+   Exclude .team-sidebar — it owns its own position: fixed + z-index: 50
+   for the team-page sidebar, and being forced to position: relative here
+   would silently break it (caused a real bug — sidebar rendered at 256px
+   offset instead of flush left). */
+.page-bg > *:not(.team-sidebar) {
   position: relative;
   z-index: 1;
 }
