@@ -1,7 +1,9 @@
 import { createServiceSupabaseClient } from '@/lib/supabase'
 import { getTeamSession } from '@/lib/auth'
 
-// Team-only: full slot/signup info including names and emails.
+// GET — any team member may read the full slot/signup roster.
+// This is shared between /team/admin (Prayer Initiative tab) and
+// /team/prayer-week (read-only team view, which strips emails client-side).
 export async function GET(request) {
   const team = await getTeamSession()
   if (!team) return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -43,13 +45,15 @@ export async function GET(request) {
     coverage_pct: total > 0 ? Math.round((filled / total) * 100) : 0,
   }
 
-  return Response.json({ slots: cleaned, stats })
+  return Response.json({ slots: cleaned, stats, viewer_role: team.role })
 }
 
-// Team-only: manually release a signup (e.g. someone bailed)
+// DELETE — admin-only. Releasing someone else's signup is a privileged
+// action and should not be available to every team member.
 export async function DELETE(request) {
   const team = await getTeamSession()
   if (!team) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (team.role !== 'admin') return Response.json({ error: 'Admin only' }, { status: 403 })
 
   const { signup_id } = await request.json()
   if (!signup_id) return Response.json({ error: 'signup_id required' }, { status: 400 })

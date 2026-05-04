@@ -6,6 +6,7 @@ import Nav from '@/components/Nav'
 import Badge from '@/components/Badge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import TeamSidebar from '@/components/TeamSidebar'
+import PrayerWeekPanel from '@/components/PrayerWeekPanel'
 
 const TZ = 'America/Chicago'
 function fmtDate(d) {
@@ -17,6 +18,13 @@ function fmtDateTime(d) {
   return new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(d))
 }
 
+const TABS = [
+  { key: 'overview',     label: 'Overview' },
+  { key: 'requests',     label: 'Requests' },
+  { key: 'members',      label: 'Team Members' },
+  { key: 'prayer-week',  label: 'Prayer Initiative' },
+]
+
 export default function AdminPage() {
   const [tab, setTab] = useState('overview')
   const [authError, setAuthError] = useState(false)
@@ -27,7 +35,7 @@ export default function AdminPage() {
   const [allRequests, setAllRequests] = useState([])
 
   const [selectedRequest, setSelectedRequest] = useState(null)
-  const [memberDetail, setMemberDetail] = useState(null)   // { member, pickups, prophetic_words, stats }
+  const [memberDetail, setMemberDetail] = useState(null)
   const [memberDetailLoading, setMemberDetailLoading] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
 
@@ -108,12 +116,19 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen page-bg">
         <Nav variant="team" />
-        <div className="max-w-md mx-auto px-6 py-20 text-center">
-          <h1 className="font-heading text-2xl font-bold mb-4">Admin Access Required</h1>
-          <p className="text-text-secondary mb-8">You need admin privileges to access this page.</p>
-          <Link href="/team" className="px-8 py-3.5 bg-purple hover:bg-purple-light text-white font-heading font-semibold rounded-lg transition-all inline-block">
-            Back to Prayer Wall
-          </Link>
+        <div className="max-w-md mx-auto px-6 py-20">
+          <div className="glass-elevated p-8 text-center">
+            <h1 className="font-heading text-2xl font-bold mb-3">Admin Access Required</h1>
+            <p className="text-text-secondary mb-7 text-sm">
+              You need admin privileges to view this page. If you were just promoted, sign out and back in to refresh your session.
+            </p>
+            <Link
+              href="/team"
+              className="inline-block px-6 py-2.5 rounded-lg bg-gold hover:bg-gold-light text-white font-heading font-semibold text-sm transition-colors"
+            >
+              Back to Prayer Wall
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -124,52 +139,41 @@ export default function AdminPage() {
       <TeamSidebar />
 
       <main className="flex-1 px-6 py-8 md:pl-8 md:pt-8 pt-20 max-w-6xl">
-        <h1 className="font-heading text-3xl font-bold mb-8">Admin Panel</h1>
+        {/* Page header */}
+        <div className="mb-8">
+          <p className="text-gold uppercase tracking-[0.3em] text-[11px] font-semibold mb-2">Admin</p>
+          <h1 className="font-heading text-3xl font-bold">Prayer Wall control panel</h1>
+          <p className="text-text-secondary text-sm mt-1.5">
+            Overview, requests, members, and the live Day/Night prayer initiative — all in one place.
+          </p>
+        </div>
 
         {actionError && (
           <div className="mb-6 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger text-sm flex items-center justify-between">
             <span>{actionError}</span>
-            <button onClick={() => setActionError('')} className="text-danger/70 hover:text-danger" aria-label="Dismiss">×</button>
+            <button onClick={() => setActionError('')} className="text-danger/70 hover:text-danger pl-3" aria-label="Dismiss">×</button>
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-1">
-          {[
-            { key: 'overview', label: 'Overview' },
-            { key: 'requests', label: 'Requests' },
-            { key: 'members',  label: 'Members' },
-          ].map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                tab === t.key ? 'bg-purple text-white' : 'glass text-text-secondary hover:border-purple/40'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Segmented tabs */}
+        <div className="mb-7 overflow-x-auto pb-1">
+          <div className="tab-track">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`tab-segment ${tab === t.key ? 'tab-segment-active' : ''}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? <LoadingSpinner /> : (
           <>
             {tab === 'overview' && stats && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in">
-                {[
-                  { label: 'Total Requests',    value: stats.total_requests,         color: 'text-text-primary' },
-                  { label: 'Pending Requests',  value: stats.pending_requests,       color: 'text-warning' },
-                  { label: 'Active Requests',   value: stats.active_requests,        color: 'text-sage' },
-                  { label: 'Total Pickups',     value: stats.total_pickups,          color: 'text-purple' },
-                  { label: 'Prophetic Words',   value: stats.total_prophetic_words,  color: 'text-spiritual' },
-                  { label: 'Active Members',    value: stats.active_members,         color: 'text-physical' },
-                ].map((s) => (
-                  <div key={s.label} className="glass rounded-lg p-5">
-                    <div className={`text-3xl font-heading font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-text-muted text-sm mt-1">{s.label}</div>
-                  </div>
-                ))}
-              </div>
+              <OverviewTab stats={stats} requests={allRequests} members={allMembers} />
             )}
 
             {tab === 'requests' && (
@@ -186,6 +190,10 @@ export default function AdminPage() {
                 onOpenDetail={openMemberDetail}
                 onUpdate={handleUpdateMember}
               />
+            )}
+
+            {tab === 'prayer-week' && (
+              <PrayerWeekPanel mode="admin" />
             )}
           </>
         )}
@@ -214,6 +222,64 @@ export default function AdminPage() {
 
 
 // ─────────────────────────────────────────────────────────────────────
+// Overview tab — stat tiles in liquid glass
+// ─────────────────────────────────────────────────────────────────────
+function OverviewTab({ stats, requests, members }) {
+  const tiles = [
+    { label: 'Total Requests',   value: stats.total_requests,         accent: 'text-text-primary' },
+    { label: 'Pending',          value: stats.pending_requests,       accent: 'text-warning' },
+    { label: 'Active',           value: stats.active_requests,        accent: 'text-sage' },
+    { label: 'Total Pickups',    value: stats.total_pickups,          accent: 'text-gold' },
+    { label: 'Prophetic Words',  value: stats.total_prophetic_words,  accent: 'text-spiritual' },
+    { label: 'Active Members',   value: stats.active_members,         accent: 'text-physical' },
+  ]
+
+  const recent = [...requests]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 6)
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {tiles.map(t => (
+          <div key={t.label} className="glass-elevated p-5">
+            <div className={`font-heading text-3xl font-bold ${t.accent}`}>{t.value}</div>
+            <div className="text-text-muted text-[11px] uppercase tracking-[0.15em] mt-2">{t.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {recent.length > 0 && (
+        <div>
+          <h3 className="font-heading text-sm uppercase tracking-[0.2em] text-text-muted mb-3">Latest Requests</h3>
+          <div className="glass-elevated overflow-hidden">
+            <ul className="divide-y divide-white/5">
+              {recent.map(r => (
+                <li key={r.id} className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-white/3 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge type="category" value={r.category} />
+                      <Badge type="status" value={r.status} />
+                    </div>
+                    <div className="text-text-primary text-sm truncate">{r.title}</div>
+                  </div>
+                  <div className="text-text-muted text-xs whitespace-nowrap">{fmtDate(r.created_at)}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      <div className="text-text-muted text-xs">
+        {members.length} team {members.length === 1 ? 'member' : 'members'} on roster.
+      </div>
+    </div>
+  )
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
 // Requests tab
 // ─────────────────────────────────────────────────────────────────────
 function RequestsTable({ requests, onSelect }) {
@@ -223,50 +289,52 @@ function RequestsTable({ requests, onSelect }) {
     filter === 'all' ? true : r.status === filter
   )
 
+  const filterChips = [
+    { key: 'all',      label: `All (${requests.length})` },
+    { key: 'pending',  label: `Pending (${requests.filter(r => r.status === 'pending').length})` },
+    { key: 'active',   label: `Active (${requests.filter(r => r.status === 'active').length})` },
+    { key: 'answered', label: `Answered (${requests.filter(r => r.status === 'answered').length})` },
+    { key: 'archived', label: `Archived (${requests.filter(r => r.status === 'archived').length})` },
+  ]
+
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-        {[
-          { key: 'all',      label: `All (${requests.length})` },
-          { key: 'pending',  label: `Pending (${requests.filter(r => r.status === 'pending').length})` },
-          { key: 'active',   label: `Active (${requests.filter(r => r.status === 'active').length})` },
-          { key: 'answered', label: `Answered (${requests.filter(r => r.status === 'answered').length})` },
-          { key: 'archived', label: `Archived (${requests.filter(r => r.status === 'archived').length})` },
-        ].map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-              filter === f.key ? 'bg-purple text-white' : 'glass text-text-secondary hover:border-purple/40'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="mb-5 overflow-x-auto pb-1">
+        <div className="tab-track">
+          {filterChips.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`tab-segment ${filter === f.key ? 'tab-segment-active' : ''}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="glass rounded-lg overflow-hidden">
+      <div className="glass-elevated overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-black/15">
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Category</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Title</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Submitter</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Status</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Pickups</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Submitted</th>
+              <tr className="border-b border-white/8 bg-black/15">
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Category</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Title</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Submitter</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Status</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Pickups</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Submitted</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-text-muted">No requests in this view.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-12 text-center text-text-muted">No requests in this view.</td></tr>
               )}
               {filtered.map(r => (
                 <tr
                   key={r.id}
                   onClick={() => onSelect(r)}
-                  className="border-b border-border/50 hover:bg-white/5 cursor-pointer transition-colors"
+                  className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3"><Badge type="category" value={r.category} /></td>
                   <td className="px-4 py-3 text-text-primary truncate max-w-[280px]">{r.title}</td>
@@ -282,7 +350,7 @@ function RequestsTable({ requests, onSelect }) {
                   </td>
                   <td className="px-4 py-3"><Badge type="status" value={r.status} /></td>
                   <td className="px-4 py-3 text-text-secondary">{r.pickup_count}</td>
-                  <td className="px-4 py-3 text-text-muted text-xs">{fmtDate(r.created_at)}</td>
+                  <td className="px-4 py-3 text-text-muted text-xs whitespace-nowrap">{fmtDate(r.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -295,8 +363,12 @@ function RequestsTable({ requests, onSelect }) {
 
 function RequestDetailModal({ request, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass-strong rounded-lg max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div className="glass-elevated max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <Badge type="category" value={request.category} />
@@ -307,15 +379,17 @@ function RequestDetailModal({ request, onClose }) {
 
         <div className="grid grid-cols-2 gap-3 mb-5 text-sm">
           <div>
-            <div className="text-text-muted text-xs uppercase tracking-wider mb-1">Status</div>
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold">Status</div>
             <Badge type="status" value={request.status} />
           </div>
           <div>
-            <div className="text-text-muted text-xs uppercase tracking-wider mb-1">Submitted</div>
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold">Submitted</div>
             <div className="text-text-secondary">{fmtDateTime(request.created_at)}</div>
           </div>
-          <div className="col-span-2 rounded-md bg-white/3 border border-border p-3">
-            <div className="text-text-muted text-xs uppercase tracking-wider mb-1">Submitter <span className="ml-1 text-warning normal-case tracking-normal">(admin-only)</span></div>
+          <div className="col-span-2 rounded-md bg-white/3 border border-white/8 p-3">
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold">
+              Submitter <span className="ml-1 text-warning normal-case tracking-normal">(admin-only)</span>
+            </div>
             {request.submitter_name ? (
               <>
                 <div className="text-text-primary">{request.submitter_name}</div>
@@ -328,13 +402,13 @@ function RequestDetailModal({ request, onClose }) {
         </div>
 
         <div className="mb-5">
-          <div className="text-text-muted text-xs uppercase tracking-wider mb-2">Description</div>
+          <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-2 font-semibold">Description</div>
           <p className="text-text-primary whitespace-pre-wrap leading-relaxed">{request.description}</p>
         </div>
 
         {request.outcome_note && (
           <div className="mb-2 border-l-2 border-gold/60 bg-gold/5 pl-4 py-3">
-            <div className="text-gold text-xs uppercase tracking-wider mb-1 font-semibold">Testimony</div>
+            <div className="text-gold text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold">Testimony</div>
             <p className="text-text-primary whitespace-pre-wrap">{request.outcome_note}</p>
             <div className="text-text-muted text-xs mt-2">Answered {fmtDate(request.outcome_at)}</div>
           </div>
@@ -355,39 +429,39 @@ function RequestDetailModal({ request, onClose }) {
 function MembersTable({ members, onAdd, onOpenDetail, onUpdate }) {
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div className="text-text-secondary text-sm">{members.length} {members.length === 1 ? 'member' : 'members'}</div>
         <button
           onClick={onAdd}
-          className="px-4 py-2 rounded-lg bg-purple hover:bg-purple-light text-white text-sm font-medium transition-colors"
+          className="px-4 py-2 rounded-lg bg-gold hover:bg-gold-light text-white text-sm font-medium transition-colors shadow-lg shadow-black/20"
         >
           + Add Member
         </button>
       </div>
 
-      <div className="glass rounded-lg overflow-hidden">
+      <div className="glass-elevated overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-black/15">
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Name</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Email</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Role</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Status</th>
-                <th className="text-left text-text-secondary text-xs font-medium px-4 py-3">Source</th>
-                <th className="text-right text-text-secondary text-xs font-medium px-4 py-3">Actions</th>
+              <tr className="border-b border-white/8 bg-black/15">
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Name</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Email</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Role</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Status</th>
+                <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Source</th>
+                <th className="text-right text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {members.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-text-muted">No team members yet.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-12 text-center text-text-muted">No team members yet.</td></tr>
               )}
               {members.map(m => (
-                <tr key={m.id} className="border-b border-border/50 hover:bg-white/5 transition-colors">
+                <tr key={m.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                   <td className="px-4 py-3">
                     <button
                       onClick={() => onOpenDetail(m.id)}
-                      className="text-text-primary hover:text-purple-light font-medium underline-offset-4 hover:underline"
+                      className="text-text-primary hover:text-gold-light font-medium underline-offset-4 hover:underline"
                     >
                       {m.display_name}
                     </button>
@@ -395,7 +469,7 @@ function MembersTable({ members, onAdd, onOpenDetail, onUpdate }) {
                   <td className="px-4 py-3 text-text-secondary">{m.email}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      m.role === 'admin' ? 'bg-purple/20 text-purple' : 'bg-sage/20 text-sage'
+                      m.role === 'admin' ? 'bg-gold/20 text-gold' : 'bg-sage/20 text-sage'
                     }`}>{m.role}</span>
                   </td>
                   <td className="px-4 py-3">
@@ -410,13 +484,13 @@ function MembersTable({ members, onAdd, onOpenDetail, onUpdate }) {
                     <div className="inline-flex gap-1.5">
                       <button
                         onClick={() => onUpdate(m.id, { role: m.role === 'admin' ? 'member' : 'admin' })}
-                        className="text-xs px-2.5 py-1 rounded-md border border-border hover:border-purple text-text-secondary hover:text-text-primary"
+                        className="text-xs px-2.5 py-1 rounded-md border border-white/12 hover:border-gold text-text-secondary hover:text-text-primary transition-colors"
                       >
                         {m.role === 'admin' ? 'Demote' : 'Promote'}
                       </button>
                       <button
                         onClick={() => onUpdate(m.id, { approved: !m.approved })}
-                        className="text-xs px-2.5 py-1 rounded-md border border-border hover:border-warning text-text-secondary hover:text-text-primary"
+                        className="text-xs px-2.5 py-1 rounded-md border border-white/12 hover:border-warning text-text-secondary hover:text-text-primary transition-colors"
                       >
                         {m.approved ? 'Suspend' : 'Activate'}
                       </button>
@@ -447,11 +521,15 @@ function AddMemberModal({ onSubmit, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="glass-strong rounded-lg max-w-md w-full p-6 sm:p-8 space-y-5"
+        className="glass-elevated max-w-md w-full p-7 space-y-5"
       >
         <div className="flex items-start justify-between">
           <h2 className="font-heading text-xl font-bold">Add team member</h2>
@@ -484,10 +562,10 @@ function AddMemberModal({ onSubmit, onClose }) {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-3 rounded-lg border border-border text-text-secondary hover:border-purple">Cancel</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/12 text-text-secondary hover:border-white/30 text-sm">Cancel</button>
           <button
             type="submit" disabled={submitting}
-            className="flex-1 py-3 rounded-lg bg-purple hover:bg-purple-light text-white font-semibold disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg bg-gold hover:bg-gold-light text-white text-sm font-semibold disabled:opacity-50"
           >
             {submitting ? 'Adding…' : 'Add Member'}
           </button>
@@ -500,8 +578,11 @@ function AddMemberModal({ onSubmit, onClose }) {
 function MemberDetailModal({ detail, loading, onClose }) {
   if (loading || detail?.loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        <div className="glass-strong rounded-lg p-12"><LoadingSpinner /></div>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      >
+        <div className="glass-elevated p-12"><LoadingSpinner /></div>
       </div>
     )
   }
@@ -509,8 +590,12 @@ function MemberDetailModal({ detail, loading, onClose }) {
   const { member, pickups = [], prophetic_words = [], stats = {} } = detail
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass-strong rounded-lg max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div className="glass-elevated max-w-2xl w-full max-h-[85vh] overflow-y-auto p-7" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <h2 className="font-heading text-2xl font-bold">{member.display_name}</h2>
@@ -521,31 +606,31 @@ function MemberDetailModal({ detail, loading, onClose }) {
 
         <div className="flex flex-wrap gap-2 mb-6">
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-            member.role === 'admin' ? 'bg-purple/20 text-purple' : 'bg-sage/20 text-sage'
+            member.role === 'admin' ? 'bg-gold/20 text-gold' : 'bg-sage/20 text-sage'
           }`}>{member.role}</span>
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
             member.approved ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
           }`}>{member.approved ? 'Active' : 'Suspended'}</span>
           {member.planning_center_id && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-text-muted/15 text-text-secondary">PC linked</span>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/8 text-text-secondary">PC linked</span>
           )}
           {!member.auth_user_id && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-text-muted/15 text-text-muted">Hasn&apos;t signed in yet</span>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/8 text-text-muted">Hasn&apos;t signed in yet</span>
           )}
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-md bg-white/3 border border-border p-3 text-center">
-            <div className="text-2xl font-heading font-bold text-purple">{stats.total_pickups ?? 0}</div>
-            <div className="text-text-muted text-xs">Pickups</div>
+          <div className="rounded-md bg-white/3 border border-white/8 p-3 text-center">
+            <div className="text-2xl font-heading font-bold text-gold">{stats.total_pickups ?? 0}</div>
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.15em] mt-1">Pickups</div>
           </div>
-          <div className="rounded-md bg-white/3 border border-border p-3 text-center">
+          <div className="rounded-md bg-white/3 border border-white/8 p-3 text-center">
             <div className="text-2xl font-heading font-bold text-spiritual">{stats.total_prophetic_words ?? 0}</div>
-            <div className="text-text-muted text-xs">Words posted</div>
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.15em] mt-1">Words posted</div>
           </div>
-          <div className="rounded-md bg-white/3 border border-border p-3 text-center">
+          <div className="rounded-md bg-white/3 border border-white/8 p-3 text-center">
             <div className="text-sm font-semibold text-text-primary mt-1.5">{fmtDate(stats.last_active_at)}</div>
-            <div className="text-text-muted text-xs mt-1">Last active</div>
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.15em] mt-1">Last active</div>
           </div>
         </div>
 
@@ -553,7 +638,7 @@ function MemberDetailModal({ detail, loading, onClose }) {
           {pickups.length === 0 ? <p className="text-text-muted text-sm">No pickups yet.</p> : (
             <ul className="space-y-2">
               {pickups.slice(0, 25).map(p => (
-                <li key={p.id} className="rounded-md bg-white/3 border border-border px-3 py-2 flex items-center justify-between gap-3">
+                <li key={p.id} className="rounded-md bg-white/3 border border-white/8 px-3 py-2 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-sm text-text-primary truncate">{p.request?.title || '—'}</div>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -590,7 +675,7 @@ function MemberDetailModal({ detail, loading, onClose }) {
 function Section({ title, children }) {
   return (
     <div className="mb-6">
-      <div className="text-text-muted text-xs uppercase tracking-wider mb-3 font-semibold">{title}</div>
+      <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-3 font-semibold">{title}</div>
       {children}
     </div>
   )
