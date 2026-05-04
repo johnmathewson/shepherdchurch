@@ -90,6 +90,28 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+/* Team sidebar — pure CSS so the desktop override is guaranteed to win.
+   Tailwind v4 splits transform/translate into separate properties, so the
+   old inline `transform: translateX(...)` + `md:translate-x-0` combo
+   silently failed (different properties, no override). Using a single
+   property here keeps the media query authoritative. */
+.team-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 16rem;
+  height: 100vh;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 300ms ease;
+}
+.team-sidebar.is-open { transform: translateX(0); }
+@media (min-width: 768px) {
+  .team-sidebar { transform: translateX(0); }
+}
+
 /* Apple-style liquid glass — specular edge + inner refraction.
    Used for stat tiles, hero panels, and any surface that should
    feel like a piece of frosted glass rather than a flat card. */

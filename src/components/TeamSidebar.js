@@ -85,24 +85,10 @@ export default function TeamSidebar({ filter, onFilter, counts = {}, open: contr
         />
       )}
 
-      {/* Sidebar — inline styles for the critical positioning so this can't
-          be defeated by a stale Tailwind build cache. We've been bitten by
-          that before (the auth.js cache miss), and `position: fixed` is
-          load-bearing for the overlay behavior to work at all. */}
-      <aside
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '16rem',
-          height: '100vh',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          transform: open ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 300ms ease',
-        }}
-        className="glass-nav border-r border-border md:!translate-x-0">
+      {/* Sidebar — positioning + slide are owned by the .team-sidebar
+          rule in globals.css, where the desktop override is unambiguous.
+          Toggle the .is-open class for the mobile slide-in. */}
+      <aside className={`glass-nav border-r border-border team-sidebar ${open ? 'is-open' : ''}`}>
         {/* Header */}
         <div className="px-5 py-5 border-b border-border-glass flex items-center justify-between">
           <Link href="/team" className="flex items-center gap-2.5">
