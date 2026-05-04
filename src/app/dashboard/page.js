@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
   const [authError, setAuthError] = useState(false)
+  const [teamRole, setTeamRole] = useState(null) // 'admin' | 'member' | null
 
   // Prayer Initiative is intentionally NOT promoted to visitors here — it's
   // a Shepherd member commitment, surfaced in the team sidebar at /team.
@@ -22,9 +23,10 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [reqRes, notifRes] = await Promise.all([
+      const [reqRes, notifRes, authRes] = await Promise.all([
         fetch('/api/requests'),
         fetch('/api/notifications'),
+        fetch('/api/auth/check'),
       ])
 
       if (reqRes.status === 401) {
@@ -39,6 +41,13 @@ export default function DashboardPage() {
       setRequests(reqData.requests || [])
       setNotifications(notifData.notifications || [])
       setUnreadCount(notifData.unread_count || 0)
+
+      // Surface team membership so dual-role users (visitors who are also on
+      // the prayer team) get a clear way to switch into the team workspace.
+      if (authRes.ok) {
+        const authData = await authRes.json()
+        setTeamRole(authData.team?.role || null)
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -98,6 +107,37 @@ export default function DashboardPage() {
       </Nav>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
+
+        {/* Dual-role banner — visitors who are also prayer team members get
+            a one-click hop into the team workspace. Hidden for pure visitors. */}
+        {teamRole && (
+          <Link
+            href={teamRole === 'admin' ? '/team/admin' : '/team'}
+            className="mb-6 flex items-center justify-between gap-4 glass rounded-lg px-5 py-3.5 hover:border-gold/40 transition-all group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-text-primary">
+                  You&apos;re also on the prayer team
+                </div>
+                <div className="text-xs text-text-muted">
+                  {teamRole === 'admin'
+                    ? 'Open the admin control panel'
+                    : 'Open the Prayer Team inbox to pray over requests'}
+                </div>
+              </div>
+            </div>
+            <div className="text-gold text-sm font-medium whitespace-nowrap flex items-center gap-1 group-hover:gap-2 transition-all">
+              {teamRole === 'admin' ? 'Admin Panel' : 'Team View'}
+              <span aria-hidden="true">→</span>
+            </div>
+          </Link>
+        )}
 
         {/* Notifications dropdown */}
         {showNotifications && (

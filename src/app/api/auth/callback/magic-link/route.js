@@ -85,12 +85,16 @@ export async function GET(request) {
         .maybeSingle()
 
       // Path 2 — admin-added by email, not yet linked. Link now so
-      // getTeamSession's first-time-link path doesn't have to.
+      // getTeamSession's first-time-link path doesn't have to. Use ilike
+      // for case/whitespace tolerance — a row added with a slightly
+      // different case than what Supabase stores on auth.users would
+      // otherwise silently miss.
       if (!tm && data.user.email) {
+        const normalizedEmail = data.user.email.trim()
         const { data: byEmail } = await sc
           .from('team_members')
           .select('id, role, auth_user_id')
-          .eq('email', data.user.email)
+          .ilike('email', normalizedEmail)
           .eq('approved', true)
           .maybeSingle()
         if (byEmail) {
