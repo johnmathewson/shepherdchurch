@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation'
 export default function TeamSidebar({ filter, onFilter, counts = {}, open: controlledOpen, onOpenChange }) {
   const pathname = usePathname()
   const [internalOpen, setInternalOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   // Controlled mode: parent owns open state and provides its own trigger.
   // Uncontrolled mode (default): sidebar manages itself with its built-in pill button.
   const isControlled = controlledOpen !== undefined
@@ -26,6 +27,17 @@ export default function TeamSidebar({ filter, onFilter, counts = {}, open: contr
 
   // Close mobile sheet on route change
   useEffect(() => { setOpen(false) }, [pathname])
+
+  // Detect admin status so the Admin link only renders for admins. A non-admin
+  // who clicked it would just hit a 403 — better to hide it entirely.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/auth/check')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => { if (!cancelled && data?.is_admin) setIsAdmin(true) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const filters = [
     { key: 'all',         label: 'All Requests',     count: counts.all },
@@ -39,7 +51,7 @@ export default function TeamSidebar({ filter, onFilter, counts = {}, open: contr
   const navLinks = [
     { href: '/team',             label: 'Prayer Wall' },
     { href: '/team/prayer-week', label: 'Day/Night' },
-    { href: '/team/admin',       label: 'Admin' },
+    ...(isAdmin ? [{ href: '/team/admin', label: 'Admin' }] : []),
   ]
 
   const onPrayerWall = pathname === '/team' || pathname?.startsWith('/team/request')

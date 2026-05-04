@@ -68,12 +68,34 @@ export async function getTeamSession() {
   if (!user) return null
 
   const serviceClient = createServiceSupabaseClient()
-  const { data: tm } = await serviceClient
+
+  // Path 1 — already linked: team_members row whose auth_user_id matches.
+  let { data: tm } = await serviceClient
     .from('team_members')
     .select('id, display_name, email, role, approved, planning_center_id')
     .eq('auth_user_id', user.id)
     .eq('approved', true)
     .maybeSingle()
+
+  // Path 2 — admin-added email-only member, first sign-in. The row was created
+  // with auth_user_id=null; link it now so the next request hits Path 1.
+  if (!tm && user.email) {
+    const { data: byEmail } = await serviceClient
+      .from('team_members')
+      .select('id, display_name, email, role, approved, planning_center_id, auth_user_id')
+      .eq('email', user.email)
+      .eq('approved', true)
+      .maybeSingle()
+    if (byEmail) {
+      if (!byEmail.auth_user_id) {
+        await serviceClient
+          .from('team_members')
+          .update({ auth_user_id: user.id })
+          .eq('id', byEmail.id)
+      }
+      tm = byEmail
+    }
+  }
 
   if (!tm) return null
   return {

@@ -17,6 +17,7 @@ export async function GET() {
       authenticated: true,
       role: 'team',
       display_name: team.display_name,
+      is_admin: team.role === 'admin',
     })
   }
 
