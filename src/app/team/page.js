@@ -156,7 +156,7 @@ export default function TeamDashboardPage() {
           </div>
         </div>
 
-        <main className="flex-1 px-4 md:px-6 py-4 md:py-8 md:pl-8 md:pt-8 max-w-5xl">
+        <main className="flex-1 px-4 md:px-6 py-4 md:py-8 md:pl-8 md:pt-8 max-w-6xl w-full mx-auto">
           {/* Desktop-only header (mobile gets the topbar above) */}
           <div className="hidden md:flex items-center justify-between mb-8">
             <h1 className="font-heading text-2xl md:text-3xl font-bold">{FILTER_LABELS[filter] || 'Prayer Requests'}</h1>
