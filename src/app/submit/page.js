@@ -24,6 +24,7 @@ export default function SubmitPage() {
   const [category, setCategory] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [wantsFollowup, setWantsFollowup] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -64,7 +65,7 @@ export default function SubmitPage() {
       const res = await fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, title, description }),
+        body: JSON.stringify({ category, title, description, wants_followup: wantsFollowup }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -156,6 +157,31 @@ export default function SubmitPage() {
                   className="resize-none"
                 />
               </div>
+
+              {/* Follow-up opt-in. Default OFF — every request is anonymous to
+                  the admin unless the submitter explicitly checks this. */}
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={wantsFollowup}
+                    onChange={(e) => setWantsFollowup(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-sage cursor-pointer"
+                    style={{ width: '1rem', height: '1rem' }}
+                  />
+                  <span className="text-sm">
+                    <span className="block text-text-primary font-medium">
+                      I&apos;d like a pastor to reach out to me about this
+                    </span>
+                    <span className="block text-text-muted text-xs mt-1 leading-relaxed">
+                      Leave unchecked for an anonymous prayer request — the team will pray over it
+                      without knowing who submitted it. Check the box only if you want a pastor to
+                      follow up directly. They&apos;ll see your name and email.
+                    </span>
+                  </span>
+                </label>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   type="button"

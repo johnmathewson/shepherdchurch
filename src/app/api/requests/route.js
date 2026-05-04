@@ -102,7 +102,7 @@ export async function POST(request) {
   const session = await getVisitorSession()
   if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { category, title, description } = await request.json()
+  const { category, title, description, wants_followup } = await request.json()
 
   if (!category || !title || !description) {
     return Response.json({ error: 'All fields are required' }, { status: 400 })
@@ -116,6 +116,7 @@ export async function POST(request) {
       category,
       title,
       description,
+      wants_followup: wants_followup === true,
     })
     .select()
     .single()

@@ -54,16 +54,16 @@ export async function GET(request) {
     })
   }
 
-  // Admin-only: full requests list with submitter identity (breaks anonymity
-  // intentionally, for admin pastoral-care visibility). Joins prayer_requests
-  // → visitors and counts pickups per request.
+  // Admin-only: full requests list. Submitter identity is ONLY exposed when
+  // the submitter explicitly opted in to pastoral follow-up — otherwise the
+  // request is anonymous to the admin too, matching the prayer team's view.
   if (action === 'all_requests') {
     const denied = requireAdmin(session); if (denied) return denied
 
     const { data: requests, error } = await serviceClient
       .from('prayer_requests')
       .select(`
-        id, category, title, description, status,
+        id, category, title, description, status, wants_followup,
         outcome_note, outcome_at, created_at, visitor_id,
         visitor:visitors ( id, display_name, email )
       `)
@@ -82,12 +82,25 @@ export async function GET(request) {
     }
 
     return Response.json({
-      requests: (requests || []).map(r => ({
-        ...r,
-        submitter_name: r.visitor?.display_name || null,
-        submitter_email: r.visitor?.email || null,
-        pickup_count: pickupCounts.get(r.id) || 0,
-      })),
+      requests: (requests || []).map(r => {
+        const opted = r.wants_followup === true
+        const out = {
+          id: r.id,
+          category: r.category,
+          title: r.title,
+          description: r.description,
+          status: r.status,
+          wants_followup: opted,
+          outcome_note: r.outcome_note,
+          outcome_at: r.outcome_at,
+          created_at: r.created_at,
+          pickup_count: pickupCounts.get(r.id) || 0,
+          // Submitter is null unless the submitter opted in to follow-up.
+          submitter_name: opted ? (r.visitor?.display_name || null) : null,
+          submitter_email: opted ? (r.visitor?.email || null) : null,
+        }
+        return out
+      }),
     })
   }
 

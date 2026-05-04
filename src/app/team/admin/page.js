@@ -320,12 +320,15 @@ function OverviewTab({ stats, requests, members }) {
 function RequestsTable({ requests, onSelect, onArchive }) {
   const [filter, setFilter] = useState('all')
 
-  const filtered = requests.filter(r =>
-    filter === 'all' ? true : r.status === filter
-  )
+  const filtered = requests.filter(r => {
+    if (filter === 'all') return true
+    if (filter === 'followup') return r.wants_followup === true
+    return r.status === filter
+  })
 
   const filterChips = [
     { key: 'all',      label: `All (${requests.length})` },
+    { key: 'followup', label: `Follow-up requested (${requests.filter(r => r.wants_followup).length})` },
     { key: 'pending',  label: `Pending (${requests.filter(r => r.status === 'pending').length})` },
     { key: 'active',   label: `Active (${requests.filter(r => r.status === 'active').length})` },
     { key: 'answered', label: `Answered (${requests.filter(r => r.status === 'answered').length})` },
@@ -379,14 +382,17 @@ function RequestsTable({ requests, onSelect, onArchive }) {
                 >
                   <td className="px-4 py-3"><Badge type="category" value={r.category} /></td>
                   <td className="px-4 py-3 text-text-primary truncate max-w-[280px]">{r.title}</td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {r.submitter_name ? (
+                  <td className="px-4 py-3">
+                    {r.wants_followup && r.submitter_name ? (
                       <div>
-                        <div className="text-text-primary">{r.submitter_name}</div>
+                        <div className="text-text-primary flex items-center gap-1.5">
+                          {r.submitter_name}
+                          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/30 font-semibold whitespace-nowrap">Follow-up</span>
+                        </div>
                         <div className="text-xs text-text-muted">{r.submitter_email}</div>
                       </div>
                     ) : (
-                      <span className="text-text-muted italic">—</span>
+                      <span className="text-text-muted text-xs italic">Anonymous</span>
                     )}
                   </td>
                   <td className="px-4 py-3"><Badge type="status" value={r.status} /></td>
@@ -438,16 +444,31 @@ function RequestDetailModal({ request, onClose, onArchive }) {
             <div className="text-text-secondary">{fmtDateTime(request.created_at)}</div>
           </div>
           <div className="col-span-2 rounded-md bg-white/3 border border-white/8 p-3">
-            <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold">
-              Submitter <span className="ml-1 text-warning normal-case tracking-normal">(admin-only)</span>
+            <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold flex items-center gap-2">
+              <span>Submitter</span>
+              {request.wants_followup ? (
+                <span className="text-[9px] tracking-wider px-1.5 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/30 font-semibold normal-case">
+                  Wants follow-up
+                </span>
+              ) : (
+                <span className="text-[9px] tracking-wider px-1.5 py-0.5 rounded-full bg-white/8 text-text-muted border border-white/12 font-semibold normal-case">
+                  Anonymous
+                </span>
+              )}
             </div>
-            {request.submitter_name ? (
+            {request.wants_followup && request.submitter_name ? (
               <>
                 <div className="text-text-primary">{request.submitter_name}</div>
-                <div className="text-xs text-text-secondary">{request.submitter_email}</div>
+                <div className="text-xs text-text-secondary">
+                  <a href={`mailto:${request.submitter_email}`} className="hover:text-gold-light transition-colors">
+                    {request.submitter_email}
+                  </a>
+                </div>
               </>
             ) : (
-              <span className="text-text-muted italic">No submitter on record.</span>
+              <p className="text-text-muted italic text-sm">
+                Submitter chose to remain anonymous. No name or email is shown — pray over the request as-is.
+              </p>
             )}
           </div>
         </div>
