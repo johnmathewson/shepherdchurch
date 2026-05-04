@@ -71,14 +71,18 @@ export async function GET(request) {
 
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    // Count pickups per request in one query.
+    // Count pickups per request, and flag the ones THIS admin (acting as a
+    // team member) has personally picked up — so the admin modal can show
+    // "you're praying" state without a second round-trip.
     const { data: pickups } = await serviceClient
       .from('prayer_pickups')
-      .select('prayer_request_id')
+      .select('prayer_request_id, team_member_id')
 
     const pickupCounts = new Map()
+    const myPickupIds = new Set()
     for (const p of pickups || []) {
       pickupCounts.set(p.prayer_request_id, (pickupCounts.get(p.prayer_request_id) || 0) + 1)
+      if (p.team_member_id === session.id) myPickupIds.add(p.prayer_request_id)
     }
 
     return Response.json({
@@ -95,6 +99,7 @@ export async function GET(request) {
           outcome_at: r.outcome_at,
           created_at: r.created_at,
           pickup_count: pickupCounts.get(r.id) || 0,
+          picked_up_by_me: myPickupIds.has(r.id),
           // Submitter is null unless the submitter opted in to follow-up.
           submitter_name: opted ? (r.visitor?.display_name || null) : null,
           submitter_email: opted ? (r.visitor?.email || null) : null,

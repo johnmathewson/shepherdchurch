@@ -7,6 +7,7 @@ import Badge from '@/components/Badge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import TeamSidebar from '@/components/TeamSidebar'
 import PrayerWeekPanel from '@/components/PrayerWeekPanel'
+import { useRealtimeSubscription } from '@/lib/realtime'
 
 const TZ = 'America/Chicago'
 function fmtDate(d) {
@@ -202,7 +203,12 @@ export default function AdminPage() {
         {loading ? <LoadingSpinner /> : (
           <>
             {tab === 'overview' && stats && (
-              <OverviewTab stats={stats} requests={allRequests} members={allMembers} />
+              <OverviewTab
+                stats={stats}
+                requests={allRequests}
+                members={allMembers}
+                onSelectRequest={setSelectedRequest}
+              />
             )}
 
             {tab === 'requests' && (
@@ -236,6 +242,7 @@ export default function AdminPage() {
           request={selectedRequest}
           onClose={() => setSelectedRequest(null)}
           onArchive={handleArchiveRequest}
+          onMutated={fetchAll}
         />
       )}
       {showAddMember && (
@@ -259,7 +266,7 @@ export default function AdminPage() {
 // ─────────────────────────────────────────────────────────────────────
 // Overview tab — stat tiles in liquid glass
 // ─────────────────────────────────────────────────────────────────────
-function OverviewTab({ stats, requests, members }) {
+function OverviewTab({ stats, requests, members, onSelectRequest }) {
   const tiles = [
     { label: 'Total Requests',   value: stats.total_requests,         accent: 'text-text-primary' },
     { label: 'Pending',          value: stats.pending_requests,       accent: 'text-warning' },
@@ -290,15 +297,29 @@ function OverviewTab({ stats, requests, members }) {
           <div className="glass-elevated overflow-hidden">
             <ul className="divide-y divide-white/5">
               {recent.map(r => (
-                <li key={r.id} className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-white/3 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge type="category" value={r.category} />
-                      <Badge type="status" value={r.status} />
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectRequest(r)}
+                    className="w-full px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors text-left"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Badge type="category" value={r.category} />
+                        <Badge type="status" value={r.status} />
+                        {r.wants_followup && (
+                          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/30 font-semibold">Follow-up</span>
+                        )}
+                      </div>
+                      <div className="text-text-primary text-sm truncate">{r.title}</div>
                     </div>
-                    <div className="text-text-primary text-sm truncate">{r.title}</div>
-                  </div>
-                  <div className="text-text-muted text-xs whitespace-nowrap">{fmtDate(r.created_at)}</div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {r.picked_up_by_me && (
+                        <span className="text-sage text-[10px] uppercase tracking-wider font-semibold">✓ Praying</span>
+                      )}
+                      <div className="text-text-muted text-xs whitespace-nowrap">{fmtDate(r.created_at)}</div>
+                    </div>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -418,14 +439,92 @@ function RequestsTable({ requests, onSelect, onArchive }) {
   )
 }
 
-function RequestDetailModal({ request, onClose, onArchive }) {
+function RequestDetailModal({ request, onClose, onArchive, onMutated }) {
+  const [pickedUp, setPickedUp] = useState(request.picked_up_by_me === true)
+  const [pickingUp, setPickingUp] = useState(false)
+  const [pickupCount, setPickupCount] = useState(request.pickup_count || 0)
+
+  const [words, setWords] = useState([])
+  const [wordsLoading, setWordsLoading] = useState(true)
+  const [newWord, setNewWord] = useState('')
+  const [postingWord, setPostingWord] = useState(false)
+  const [actionError, setActionError] = useState('')
+
+  const loadWords = useCallback(async () => {
+    setWordsLoading(true)
+    try {
+      const res = await fetch(`/api/prophetic?request_id=${request.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setWords(data.words || [])
+      }
+    } finally {
+      setWordsLoading(false)
+    }
+  }, [request.id])
+
+  useEffect(() => { loadWords() }, [loadWords])
+
+  // Live updates if another team member posts a word while this modal is open.
+  useRealtimeSubscription('prophetic_words', `prayer_request_id=eq.${request.id}`, () => {
+    loadWords()
+  })
+
+  async function handlePickUp() {
+    if (pickedUp || pickingUp) return
+    setPickingUp(true)
+    setActionError('')
+    try {
+      const res = await fetch('/api/pickups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: request.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setActionError(data.error || 'Could not pick up this request.')
+        return
+      }
+      setPickedUp(true)
+      setPickupCount((c) => c + 1)
+      onMutated?.()
+    } finally {
+      setPickingUp(false)
+    }
+  }
+
+  async function handlePostWord(e) {
+    e.preventDefault()
+    const content = newWord.trim()
+    if (!content || postingWord) return
+    setPostingWord(true)
+    setActionError('')
+    try {
+      const res = await fetch('/api/prophetic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: request.id, content }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setActionError(data.error || 'Could not post prophetic word.')
+        return
+      }
+      setNewWord('')
+      loadWords()
+      onMutated?.()
+    } finally {
+      setPostingWord(false)
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
     >
-      <div className="glass-elevated max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+      <div className="glass-elevated max-w-2xl w-full max-h-[88vh] overflow-y-auto p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <Badge type="category" value={request.category} />
@@ -479,15 +578,81 @@ function RequestDetailModal({ request, onClose, onArchive }) {
         </div>
 
         {request.outcome_note && (
-          <div className="mb-2 border-l-2 border-gold/60 bg-gold/5 pl-4 py-3">
+          <div className="mb-5 border-l-2 border-gold/60 bg-gold/5 pl-4 py-3">
             <div className="text-gold text-[10px] uppercase tracking-[0.18em] mb-1 font-semibold">Testimony</div>
             <p className="text-text-primary whitespace-pre-wrap">{request.outcome_note}</p>
             <div className="text-text-muted text-xs mt-2">Answered {fmtDate(request.outcome_at)}</div>
           </div>
         )}
 
-        <div className="mt-6 text-text-muted text-sm">
-          {request.pickup_count} {request.pickup_count === 1 ? 'team member has' : 'team members have'} prayed for this.
+        {actionError && (
+          <div className="mb-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-danger text-sm">
+            {actionError}
+          </div>
+        )}
+
+        {/* Pick up — admins are also team members; let them pray over the request directly. */}
+        {request.status !== 'archived' && (
+          <div className="mt-6 pt-5 border-t border-white/8">
+            <button
+              onClick={handlePickUp}
+              disabled={pickedUp || pickingUp}
+              className={`w-full py-3 rounded-lg font-heading font-semibold text-sm transition-all ${
+                pickedUp
+                  ? 'bg-sage/20 text-sage border border-sage/40 cursor-default'
+                  : 'bg-sage hover:bg-sage-dark text-white shadow-lg shadow-sage/20 disabled:opacity-50'
+              }`}
+            >
+              {pickedUp ? '✓ You are praying for this' : pickingUp ? 'Picking up…' : 'Pick Up & Pray'}
+            </button>
+            <div className="text-text-muted text-xs mt-2 text-center">
+              {pickupCount} {pickupCount === 1 ? 'team member has' : 'team members have'} prayed for this.
+            </div>
+          </div>
+        )}
+
+        {/* Prophetic words — visible & writable for any team member, admins included. */}
+        <div className="mt-6 pt-5 border-t border-white/8">
+          <div className="text-text-muted text-[10px] uppercase tracking-[0.18em] mb-3 font-semibold flex items-center gap-2">
+            <span>Prophetic Words</span>
+            <span className="text-text-muted/70 normal-case tracking-normal">({words.length})</span>
+          </div>
+
+          {wordsLoading ? (
+            <div className="py-4"><LoadingSpinner /></div>
+          ) : words.length === 0 ? (
+            <p className="text-text-muted text-sm italic">No prophetic words yet. Be the first to share what the Lord is saying.</p>
+          ) : (
+            <ul className="space-y-3 mb-5">
+              {words.map((w) => (
+                <li key={w.id} className="border-l-2 border-spiritual/60 bg-spiritual/5 pl-3 py-2">
+                  <p className="text-sm text-text-primary whitespace-pre-wrap leading-relaxed">{w.content}</p>
+                  <div className="text-text-muted text-[11px] mt-1">{fmtDateTime(w.created_at)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form onSubmit={handlePostWord} className="space-y-2 mt-4">
+            <textarea
+              value={newWord}
+              onChange={(e) => setNewWord(e.target.value)}
+              placeholder="Share a scripture, image, or prompting from the Lord…"
+              rows={3}
+              maxLength={1500}
+              disabled={postingWord}
+              className="resize-none text-sm"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={!newWord.trim() || postingWord}
+                className="px-4 py-2 rounded-lg bg-spiritual/80 hover:bg-spiritual text-white text-sm font-heading font-semibold transition-colors disabled:opacity-50"
+              >
+                {postingWord ? 'Posting…' : 'Post Prophetic Word'}
+              </button>
+            </div>
+          </form>
         </div>
 
         {request.status !== 'archived' && (
