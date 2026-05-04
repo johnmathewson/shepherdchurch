@@ -263,3 +263,55 @@ export async function PATCH(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ member: data })
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// DELETE — admin: hard-delete a team member.
+// CASCADES to prayer_pickups and prophetic_words for this member.
+// Prefer Suspend (PATCH approved=false) for soft removal — this is for
+// truly removing test data or a member who never should have been added.
+// ─────────────────────────────────────────────────────────────────────
+export async function DELETE(request) {
+  const session = await getTeamSession()
+  const denied = requireAdmin(session); if (denied) return denied
+
+  const body = await request.json().catch(() => ({}))
+  const { id } = body
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 })
+
+  // Don't let an admin delete themselves.
+  if (id === session.id) {
+    return Response.json({
+      error: 'You cannot delete your own team membership. Ask another admin to do it.',
+    }, { status: 400 })
+  }
+
+  const serviceClient = createServiceSupabaseClient()
+
+  // If deleting the last remaining admin would lock everyone out, refuse.
+  const { data: target } = await serviceClient
+    .from('team_members')
+    .select('role, approved')
+    .eq('id', id)
+    .maybeSingle()
+  if (!target) return Response.json({ error: 'not_found' }, { status: 404 })
+  if (target.role === 'admin' && target.approved) {
+    const { count } = await serviceClient
+      .from('team_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'admin')
+      .eq('approved', true)
+    if ((count ?? 0) <= 1) {
+      return Response.json({
+        error: 'This is the only active admin — promote someone else first.',
+      }, { status: 400 })
+    }
+  }
+
+  const { error } = await serviceClient
+    .from('team_members')
+    .delete()
+    .eq('id', id)
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json({ success: true })
+}

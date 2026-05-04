@@ -111,6 +111,35 @@ export default function AdminPage() {
     }
   }
 
+  async function handleDeleteMember(member) {
+    setActionError('')
+    const ok = confirm(
+      `Permanently delete ${member.display_name}?\n\n` +
+      `This will also remove all of their pickups and prophetic words. ` +
+      `If you want to keep their history but stop their access, use Suspend instead.`
+    )
+    if (!ok) return
+    const res = await fetch('/api/team', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: member.id }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { setActionError(data.error || 'Could not delete member.'); return }
+    fetchAll()
+  }
+
+  async function handleArchiveRequest(req) {
+    setActionError('')
+    const ok = confirm(`Archive "${req.title}"?\n\nIt will move to the Archived filter and disappear from the active views.`)
+    if (!ok) return
+    const res = await fetch(`/api/requests/${req.id}/archive`, { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { setActionError(data.error || 'Could not archive request.'); return }
+    setSelectedRequest(null)
+    fetchAll()
+  }
+
   // ─── Auth-error UI ─────────────────────────────────────────────────
   if (authError) {
     return (
@@ -180,6 +209,7 @@ export default function AdminPage() {
               <RequestsTable
                 requests={allRequests}
                 onSelect={setSelectedRequest}
+                onArchive={handleArchiveRequest}
               />
             )}
 
@@ -189,6 +219,7 @@ export default function AdminPage() {
                 onAdd={() => setShowAddMember(true)}
                 onOpenDetail={openMemberDetail}
                 onUpdate={handleUpdateMember}
+                onDelete={handleDeleteMember}
               />
             )}
 
@@ -201,7 +232,11 @@ export default function AdminPage() {
 
       {/* Modals */}
       {selectedRequest && (
-        <RequestDetailModal request={selectedRequest} onClose={() => setSelectedRequest(null)} />
+        <RequestDetailModal
+          request={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+          onArchive={handleArchiveRequest}
+        />
       )}
       {showAddMember && (
         <AddMemberModal
@@ -282,7 +317,7 @@ function OverviewTab({ stats, requests, members }) {
 // ─────────────────────────────────────────────────────────────────────
 // Requests tab
 // ─────────────────────────────────────────────────────────────────────
-function RequestsTable({ requests, onSelect }) {
+function RequestsTable({ requests, onSelect, onArchive }) {
   const [filter, setFilter] = useState('all')
 
   const filtered = requests.filter(r =>
@@ -296,6 +331,11 @@ function RequestsTable({ requests, onSelect }) {
     { key: 'answered', label: `Answered (${requests.filter(r => r.status === 'answered').length})` },
     { key: 'archived', label: `Archived (${requests.filter(r => r.status === 'archived').length})` },
   ]
+
+  function handleArchiveClick(e, req) {
+    e.stopPropagation()
+    onArchive(req)
+  }
 
   return (
     <div className="animate-fade-in">
@@ -324,11 +364,12 @@ function RequestsTable({ requests, onSelect }) {
                 <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Status</th>
                 <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Pickups</th>
                 <th className="text-left text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Submitted</th>
+                <th className="text-right text-text-secondary text-[11px] font-medium uppercase tracking-[0.12em] px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-text-muted">No requests in this view.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-text-muted">No requests in this view.</td></tr>
               )}
               {filtered.map(r => (
                 <tr
@@ -351,6 +392,16 @@ function RequestsTable({ requests, onSelect }) {
                   <td className="px-4 py-3"><Badge type="status" value={r.status} /></td>
                   <td className="px-4 py-3 text-text-secondary">{r.pickup_count}</td>
                   <td className="px-4 py-3 text-text-muted text-xs whitespace-nowrap">{fmtDate(r.created_at)}</td>
+                  <td className="px-4 py-3 text-right">
+                    {r.status !== 'archived' && (
+                      <button
+                        onClick={(e) => handleArchiveClick(e, r)}
+                        className="text-xs px-2.5 py-1 rounded-md border border-white/12 hover:border-warning text-text-secondary hover:text-warning transition-colors whitespace-nowrap"
+                      >
+                        Archive
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -361,7 +412,7 @@ function RequestsTable({ requests, onSelect }) {
   )
 }
 
-function RequestDetailModal({ request, onClose }) {
+function RequestDetailModal({ request, onClose, onArchive }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -417,6 +468,17 @@ function RequestDetailModal({ request, onClose }) {
         <div className="mt-6 text-text-muted text-sm">
           {request.pickup_count} {request.pickup_count === 1 ? 'team member has' : 'team members have'} prayed for this.
         </div>
+
+        {request.status !== 'archived' && (
+          <div className="mt-6 pt-5 border-t border-white/8 flex justify-end">
+            <button
+              onClick={() => onArchive(request)}
+              className="px-4 py-2 rounded-lg border border-warning/40 hover:bg-warning/10 text-warning text-sm font-medium transition-colors"
+            >
+              Archive request
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -426,7 +488,7 @@ function RequestDetailModal({ request, onClose }) {
 // ─────────────────────────────────────────────────────────────────────
 // Members tab
 // ─────────────────────────────────────────────────────────────────────
-function MembersTable({ members, onAdd, onOpenDetail, onUpdate }) {
+function MembersTable({ members, onAdd, onOpenDetail, onUpdate, onDelete }) {
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-5">
@@ -493,6 +555,12 @@ function MembersTable({ members, onAdd, onOpenDetail, onUpdate }) {
                         className="text-xs px-2.5 py-1 rounded-md border border-white/12 hover:border-warning text-text-secondary hover:text-text-primary transition-colors"
                       >
                         {m.approved ? 'Suspend' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => onDelete(m)}
+                        className="text-xs px-2.5 py-1 rounded-md border border-white/12 hover:border-danger text-text-secondary hover:text-danger transition-colors"
+                      >
+                        Delete
                       </button>
                     </div>
                   </td>
