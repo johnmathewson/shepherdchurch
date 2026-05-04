@@ -52,6 +52,8 @@ export default function PrayerWeekPanel({ mode = 'team' }) {
   const [error, setError] = useState('')
   const [authError, setAuthError] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
+  const [claiming, setClaiming] = useState(false)
+  const [claimNotes, setClaimNotes] = useState('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -108,6 +110,36 @@ export default function PrayerWeekPanel({ mode = 'team' }) {
     } catch {
       setError('Network error while releasing signup.')
     }
+  }
+
+  async function handleClaim(slot_id) {
+    setError('')
+    setClaiming(true)
+    try {
+      const res = await fetch('/api/prayer-week/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot_id, notes: claimNotes.trim() || null }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Could not claim this slot.')
+        return
+      }
+      setSelectedSlot(null)
+      setClaimNotes('')
+      fetchData()
+    } catch {
+      setError('Network error while claiming slot.')
+    } finally {
+      setClaiming(false)
+    }
+  }
+
+  function closeModal() {
+    setSelectedSlot(null)
+    setClaimNotes('')
+    setClaiming(false)
   }
 
   if (loading) {
@@ -267,7 +299,7 @@ export default function PrayerWeekPanel({ mode = 'team' }) {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setSelectedSlot(null)}
+          onClick={closeModal}
         >
           <div
             className="glass-elevated p-7 w-full max-w-md"
@@ -283,7 +315,7 @@ export default function PrayerWeekPanel({ mode = 'team' }) {
                 </h3>
               </div>
               <button
-                onClick={() => setSelectedSlot(null)}
+                onClick={closeModal}
                 className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"
                 aria-label="Close"
               >×</button>
@@ -315,7 +347,7 @@ export default function PrayerWeekPanel({ mode = 'team' }) {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setSelectedSlot(null)}
+                    onClick={closeModal}
                     className="flex-1 py-2.5 border border-border hover:border-white/30 text-text-secondary text-sm font-medium rounded-lg transition-colors"
                   >
                     Close
@@ -332,17 +364,41 @@ export default function PrayerWeekPanel({ mode = 'team' }) {
               </>
             ) : (
               <>
-                <p className="text-text-secondary text-sm mt-4 mb-6">
-                  This hour is currently uncovered. {isAdmin
-                    ? 'Reach out to someone on the team to fill it.'
-                    : 'Pray for someone to step into this watch.'}
+                <p className="text-text-secondary text-sm mt-4 mb-4">
+                  This hour is currently uncovered. Take it yourself, or pray for someone to step into the watch.
                 </p>
-                <button
-                  onClick={() => setSelectedSlot(null)}
-                  className="w-full py-2.5 border border-border hover:border-white/30 text-text-secondary text-sm font-medium rounded-lg transition-colors"
-                >
-                  Close
-                </button>
+
+                <div className="mb-5">
+                  <label className="block text-text-muted text-[10px] uppercase tracking-[0.18em] font-semibold mb-2">
+                    Notes for your hour <span className="normal-case tracking-normal text-text-muted/70">(optional)</span>
+                  </label>
+                  <textarea
+                    value={claimNotes}
+                    onChange={(e) => setClaimNotes(e.target.value)}
+                    placeholder="Anything you want the team to know — what you'll be praying for, where you'll be…"
+                    rows={3}
+                    maxLength={400}
+                    disabled={claiming}
+                    className="resize-none text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeModal}
+                    disabled={claiming}
+                    className="flex-1 py-2.5 border border-border hover:border-white/30 text-text-secondary text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => handleClaim(selectedSlot.id)}
+                    disabled={claiming}
+                    className="flex-1 py-2.5 bg-gold hover:bg-gold-light text-white text-sm font-heading font-semibold rounded-lg transition-colors shadow-lg shadow-gold/20 disabled:opacity-50"
+                  >
+                    {claiming ? 'Claiming…' : 'Take this hour'}
+                  </button>
+                </div>
               </>
             )}
           </div>
