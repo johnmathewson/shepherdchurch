@@ -16,18 +16,15 @@ export default function DashboardPage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [authError, setAuthError] = useState(false)
 
-  // Prayer initiative
-  const [prayerEvent, setPrayerEvent] = useState(null)
-  const [mySlotCount, setMySlotCount] = useState(0)
-  const [totalSlots, setTotalSlots] = useState(0)
-  const [filledSlots, setFilledSlots] = useState(0)
+  // Prayer Initiative is intentionally NOT promoted to visitors here — it's
+  // a Shepherd member commitment, surfaced in the team sidebar at /team.
+  // The /prayer-week page remains publicly reachable for anyone with the link.
 
   const fetchData = useCallback(async () => {
     try {
-      const [reqRes, notifRes, eventRes] = await Promise.all([
+      const [reqRes, notifRes] = await Promise.all([
         fetch('/api/requests'),
         fetch('/api/notifications'),
-        fetch('/api/prayer-week/event'),
       ])
 
       if (reqRes.status === 401) {
@@ -42,23 +39,6 @@ export default function DashboardPage() {
       setRequests(reqData.requests || [])
       setNotifications(notifData.notifications || [])
       setUnreadCount(notifData.unread_count || 0)
-
-      // Prayer initiative
-      if (eventRes.ok) {
-        const eventData = await eventRes.json()
-        if (eventData.event) {
-          setPrayerEvent(eventData.event)
-          // Fetch slots for progress
-          const slotsRes = await fetch(`/api/prayer-week/slots?event_id=${eventData.event.id}`)
-          if (slotsRes.ok) {
-            const slotsData = await slotsRes.json()
-            const slots = slotsData.slots || []
-            setTotalSlots(slots.length)
-            setFilledSlots(slots.filter(s => s.public_status === 'filled').length)
-            setMySlotCount(slots.filter(s => s.mine).length)
-          }
-        }
-      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -95,8 +75,6 @@ export default function DashboardPage() {
       </div>
     )
   }
-
-  const prayerPct = totalSlots > 0 ? Math.round((filledSlots / totalSlots) * 100) : 0
 
   return (
     <div className="min-h-screen page-bg">
@@ -156,58 +134,6 @@ export default function DashboardPage() {
           <LoadingSpinner />
         ) : (
           <div className="space-y-10">
-
-            {/* ── Prayer Initiative ── */}
-            {prayerEvent && (
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-heading text-2xl font-bold">Prayer Initiative</h2>
-                  {mySlotCount > 0 && (
-                    <Link href="/prayer-week/my-slots" className="text-sm text-sage hover:text-sage-light">
-                      My slots →
-                    </Link>
-                  )}
-                </div>
-
-                <Link href="/prayer-week" className="block glass rounded-lg p-6 hover:border-gold/40 transition-all group">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-gold text-xs uppercase tracking-widest font-semibold mb-1">{prayerEvent.name}</p>
-                      <h3 className="font-heading text-xl font-bold group-hover:text-gold transition-colors">
-                        A Week of Unbroken Prayer
-                      </h3>
-                    </div>
-                    {mySlotCount > 0 && (
-                      <span className="text-xs bg-gold/20 text-gold border border-gold/30 rounded-full px-3 py-1 font-medium">
-                        {mySlotCount} hour{mySlotCount !== 1 ? 's' : ''} claimed
-                      </span>
-                    )}
-                  </div>
-
-                  {prayerEvent.description && (
-                    <p className="text-text-secondary text-sm mb-4 line-clamp-2">{prayerEvent.description}</p>
-                  )}
-
-                  {/* Progress bar */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs text-text-muted">
-                      <span>{filledSlots} of {totalSlots} hours covered</span>
-                      <span>{prayerPct}%</span>
-                    </div>
-                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gold rounded-full transition-all"
-                        style={{ width: `${prayerPct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-sm text-gold/80 font-medium group-hover:text-gold transition-colors">
-                    {mySlotCount > 0 ? 'View or add more hours →' : 'Sign up for a prayer hour →'}
-                  </p>
-                </Link>
-              </section>
-            )}
 
             {/* ── Prayer Requests ── */}
             <section>
