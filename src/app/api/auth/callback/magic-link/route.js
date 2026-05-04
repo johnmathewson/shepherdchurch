@@ -13,7 +13,8 @@ export async function GET(request) {
   const code = url.searchParams.get('code')
   const errorParam = url.searchParams.get('error')
   const errorDescription = url.searchParams.get('error_description')
-  const rawNext = url.searchParams.get('next') || '/dashboard'
+  const explicitNext = url.searchParams.get('next')
+  const rawNext = explicitNext || '/dashboard'
   // Only accept same-origin paths. Reject protocol-relative URLs ("//evil.com")
   // which start with "/" but resolve off-origin → open redirect risk.
   const isSafePath = rawNext.startsWith('/')
@@ -65,6 +66,53 @@ export async function GET(request) {
   } catch (err) {
     console.error('Magic-link callback unexpected error:', err)
     return Response.redirect(new URL('/login?error=unexpected', request.url))
+  }
+
+  // Smart routing: if the user is on the prayer team, route them into
+  // the team UI instead of the visitor dashboard. Only applies when no
+  // explicit ?next was supplied (or it was the default /dashboard) —
+  // an explicit destination always wins.
+  const shouldAutoRouteTeam = !explicitNext || explicitNext === '/dashboard'
+  if (shouldAutoRouteTeam) {
+    try {
+      const sc = createServiceSupabaseClient()
+      // Path 1 — team_members row already linked to this auth user
+      let { data: tm } = await sc
+        .from('team_members')
+        .select('id, role, auth_user_id')
+        .eq('auth_user_id', data.user.id)
+        .eq('approved', true)
+        .maybeSingle()
+
+      // Path 2 — admin-added by email, not yet linked. Link now so
+      // getTeamSession's first-time-link path doesn't have to.
+      if (!tm && data.user.email) {
+        const { data: byEmail } = await sc
+          .from('team_members')
+          .select('id, role, auth_user_id')
+          .eq('email', data.user.email)
+          .eq('approved', true)
+          .maybeSingle()
+        if (byEmail) {
+          if (!byEmail.auth_user_id) {
+            await sc
+              .from('team_members')
+              .update({ auth_user_id: data.user.id })
+              .eq('id', byEmail.id)
+          }
+          tm = byEmail
+        }
+      }
+
+      if (tm) {
+        const teamDest = tm.role === 'admin' ? '/team/admin' : '/team'
+        return Response.redirect(new URL(teamDest, request.url))
+      }
+    } catch (err) {
+      // Don't block sign-in on a routing-lookup failure — fall through to
+      // the default /dashboard redirect below.
+      console.error('Team-routing lookup failed:', err)
+    }
   }
 
   return Response.redirect(new URL(next, request.url))
