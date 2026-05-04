@@ -1,3 +1,17 @@
+// DEPRECATED — this Next.js Planning Center OAuth callback is being replaced
+// by the unified `pco-signin` Supabase Edge Function (single source of truth
+// for PCO sign-ins across apps hub, identity tool, and prayer wall).
+//
+// As of the PC-OAuth-collapse work:
+//   • /team/login now points its OAuth redirect_uri at the edge function.
+//   • /login's small "Sign in with Planning Center" link still points here
+//     (kept for now, will be migrated in a follow-up).
+//   • This route handler stays in place so any in-flight tokens or the /login
+//     path continue to work — do NOT delete until /login is also migrated.
+//
+// Once /login is migrated and we've confirmed no traffic hits this route for
+// a few days, this whole file can be removed.
+
 import { cookies } from 'next/headers'
 import { createServiceSupabaseClient } from '@/lib/supabase'
 import { createSessionToken } from '@/lib/auth'

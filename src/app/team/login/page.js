@@ -19,7 +19,12 @@ function TeamLoginContent() {
   const errorCode = searchParams.get('error')
   const errorMessage = errorCode ? errorMessages[errorCode] || 'An error occurred.' : ''
 
-  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_PLANNING_CENTER_REDIRECT_URI || '')}&response_type=code&scope=people+services&state=team`
+  // Route directly through the unified pco-signin Supabase Edge Function so
+  // there's a single source of truth for PCO sign-ins (the same path the
+  // apps hub and identity tool use). The legacy Next.js callback at
+  // /api/auth/callback/planningcenter is deprecated but kept for now.
+  const PCO_EDGE_REDIRECT = 'https://epkuvykamufrrgbacbel.supabase.co/functions/v1/pco-signin'
+  const pcAuthUrl = `https://api.planningcenteronline.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_PLANNING_CENTER_CLIENT_ID || ''}&redirect_uri=${encodeURIComponent(PCO_EDGE_REDIRECT)}&response_type=code&scope=people+services&state=team`
 
   return (
     <div className="animate-fade-in glass rounded-lg p-8">
